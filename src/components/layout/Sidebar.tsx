@@ -32,14 +32,25 @@ const iconMap = {
   Home, Camera, PlusCircle, ClipboardList, Cog, Package2, BarChart, Truck, Settings
 }
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<{ 
+  currentPage?: string
+  onPageChange?: (page: string) => void 
+}> = ({ currentPage = 'dashboard', onPageChange }) => {
   const { sidebarCollapsed, toggleSidebar, showNotification } = useUIStore()
 
   const handleMenuItemClick = (item: MenuItem) => {
-    showNotification({
-      message: `📱 Navegando para ${item.label}...`,
-      type: 'info'
-    })
+    if (onPageChange && (item.id === 'dashboard' || item.id === 'nova-bobina')) {
+      onPageChange(item.id)
+      showNotification({
+        message: `📱 Navegando para ${item.label}...`,
+        type: 'info'
+      })
+    } else {
+      showNotification({
+        message: `📱 ${item.label} em desenvolvimento...`,
+        type: 'info'
+      })
+    }
   }
 
   return (
@@ -70,6 +81,7 @@ export const Sidebar: React.FC = () => {
           <ul className="space-y-0">
             {menuItems.slice(0, -1).map((item) => {
               const IconComponent = iconMap[item.icon as keyof typeof iconMap]
+              const isActive = item.id === currentPage
               
               return (
                 <li key={item.id}>
@@ -80,10 +92,10 @@ export const Sidebar: React.FC = () => {
                       sidebarCollapsed 
                         ? 'justify-center items-center p-0 w-[48px] h-[48px] rounded-lg mx-auto min-w-[48px] max-w-[48px]' 
                         : 'justify-start space-x-3 px-3 py-2 hover:translate-x-1 rounded-lg items-center',
-                      item.active 
+                      isActive 
                         ? 'active bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 text-white' 
                         : 'text-gray-300 hover:bg-white/10 hover:text-white',
-                      !sidebarCollapsed && item.active && 'hover:translate-x-0.5'
+                      !sidebarCollapsed && isActive && 'hover:translate-x-0.5'
                     )}
                     style={sidebarCollapsed ? {
                       display: 'flex',
@@ -101,7 +113,7 @@ export const Sidebar: React.FC = () => {
                       className={cn(
                         'flex-shrink-0 transition-colors duration-300',
                         'w-5 h-5',
-                        item.active ? 'text-white' : 'text-gray-300 group-hover:text-white'
+                        isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'
                       )}
                       style={sidebarCollapsed ? {
                         position: 'absolute',

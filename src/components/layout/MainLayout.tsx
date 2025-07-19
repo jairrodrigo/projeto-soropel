@@ -7,9 +7,15 @@ import { useUIStore, useDashboardStore } from '@/stores'
 
 interface MainLayoutProps {
   children: React.ReactNode
+  currentPage?: string
+  onPageChange?: (page: string) => void
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ 
+  children, 
+  currentPage = 'dashboard',
+  onPageChange 
+}) => {
   const { mobileMenuOpen, sidebarCollapsed } = useUIStore()
   const { refreshData, isLoading } = useDashboardStore()
 
@@ -25,7 +31,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           'md:translate-x-0 md:z-auto',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}>
-          <Sidebar />
+          <Sidebar currentPage={currentPage} onPageChange={onPageChange} />
         </div>
 
         {/* Mobile overlay */}

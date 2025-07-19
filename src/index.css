@@ -204,3 +204,84 @@ html, body, #root {
     grid-template-columns: 1fr;
   }
 }
+
+/* Nova Bobina specific styles */
+.status-switch {
+  width: 48px;
+  height: 24px;
+  border-radius: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.status-switch-knob {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Camera preview animation */
+.camera-preview {
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+}
+
+.camera-preview video {
+  object-fit: cover;
+}
+
+/* Processing animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Form field highlights when auto-filled */
+.field-highlight {
+  background-color: #dcfce7 !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Mobile optimizations for Nova Bobina */
+@media (max-width: 768px) {
+  .status-switch {
+    width: 44px;
+    height: 22px;
+  }
+  
+  .status-switch-knob {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .camera-preview {
+    height: 220px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .camera-preview {
+    height: 180px !important;
+  }
+  
+  .status-switch {
+    width: 40px;
+    height: 20px;
+  }
+  
+  .status-switch-knob {
+    width: 16px;
+    height: 16px;
+  }
+}
