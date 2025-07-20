@@ -1,4 +1,4 @@
-# 🏭 Sistema Soropel - Dashboard de Produção Industrial
+# 🏭 Sistema Soropel - Dashboard de Produção Industrial [STAGING]
 
 ## 🎯 Visão Geral
 
