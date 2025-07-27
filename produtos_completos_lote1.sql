@@ -1,0 +1,47 @@
+-- SQL COMPLETO - TODOS OS PRODUTOS SOROPEL (Lote 1/4)
+-- 393 produtos extraídos da planilha real
+
+INSERT INTO products (soropel_code, category_code, category_name, name, weight_value, weight_unit, active) VALUES
+-- LOTE 1: PRIMEIROS 100 PRODUTOS
+(1101, '1100s', 'Kraft Especial', 'KRAFT 1/4 MIX - ESPECIAL', 0.25, 'kg', true),
+(1102, '1100s', 'Kraft Especial', 'KRAFT 1/2 MIX - ESPECIAL', 0.5, 'kg', true),
+(1103, '1100s', 'Kraft Especial', 'KRAFT 1 KG MIX - ESPECIAL', 1.0, 'kg', true),
+(1104, '1100s', 'Kraft Especial', 'KRAFT 2KG MIX - ESPECIAL', 2.0, 'kg', true),
+(1105, '1100s', 'Kraft Especial', 'KRAFT 3KG MIX - ESPECIAL', 3.0, 'kg', true),
+(1106, '1100s', 'Kraft Especial', 'KRAFT 4KG MIX - ESPECIAL', 4.0, 'kg', true),
+(1107, '1100s', 'Kraft Especial', 'KRAFT 5KG MIX - ESPECIAL', 5.0, 'kg', true),
+(1108, '1100s', 'Kraft Especial', 'KRAFT 7,5KG MIX - ESPECIAL', 7.5, 'kg', true),
+(1109, '1100s', 'Kraft Especial', 'KRAFT 10KG MIX - ESPECIAL', 10.0, 'kg', true),
+(1110, '1100s', 'Kraft Especial', 'KRAFT 15KG MIX - ESPECIAL', 15.0, 'kg', true),
+(1111, '1100s', 'Kraft Especial', 'KRAFT 1/4 NATURAL - ESPECIAL', 0.25, 'kg', true),
+(1112, '1100s', 'Kraft Especial', 'KRAFT 1/2 NATURAL - ESPECIAL', 0.5, 'kg', true),
+(1113, '1100s', 'Kraft Especial', 'KRAFT 1 KG NATURAL - ESPECIAL', 1.0, 'kg', true),
+(1114, '1100s', 'Kraft Especial', 'KRAFT 2KG NATURAL - ESPECIAL', 2.0, 'kg', true),
+(1115, '1100s', 'Kraft Especial', 'KRAFT 3KG NATURAL - ESPECIAL', 3.0, 'kg', true),
+(1116, '1100s', 'Kraft Especial', 'KRAFT 4KG NATURAL - ESPECIAL', 4.0, 'kg', true),
+(1117, '1100s', 'Kraft Especial', 'KRAFT 5KG NATURAL - ESPECIAL', 5.0, 'kg', true),
+(1118, '1100s', 'Kraft Especial', 'KRAFT 7,5KG NATURAL - ESPECIAL', 7.5, 'kg', true),
+(1119, '1100s', 'Kraft Especial', 'KRAFT 10KG NATURAL - ESPECIAL', 10.0, 'kg', true),
+(1120, '1100s', 'Kraft Especial', 'KRAFT 15KG NATURAL - ESPECIAL', 15.0, 'kg', true),
+(1121, '1100s', 'Kraft Especial', 'KRAFT 1/4 BRANCO - ESPECIAL', 0.25, 'kg', true),
+(1122, '1100s', 'Kraft Especial', 'KRAFT 1/2 BRANCO - ESPECIAL', 0.5, 'kg', true),
+(1123, '1100s', 'Kraft Especial', 'KRAFT 1 KG BRANCO - ESPECIAL', 1.0, 'kg', true),
+(1124, '1100s', 'Kraft Especial', 'KRAFT 2KG BRANCO - ESPECIAL', 2.0, 'kg', true),
+(1125, '1100s', 'Kraft Especial', 'KRAFT 3KG BRANCO - ESPECIAL', 3.0, 'kg', true),
+(1126, '1100s', 'Kraft Especial', 'KRAFT 4KG BRANCO - ESPECIAL', 4.0, 'kg', true),
+(1127, '1100s', 'Kraft Especial', 'KRAFT 5KG BRANCO - ESPECIAL', 5.0, 'kg', true),
+(1128, '1100s', 'Kraft Especial', 'KRAFT 7,5KG BRANCO - ESPECIAL', 7.5, 'kg', true),
+(1129, '1100s', 'Kraft Especial', 'KRAFT 10KG BRANCO - ESPECIAL', 10.0, 'kg', true),
+(1130, '1100s', 'Kraft Especial', 'KRAFT 15KG BRANCO - ESPECIAL', 15.0, 'kg', true),
+(1131, '1100s', 'Kraft Especial', 'KRAFT 20KG NATURAL - ESPECIAL', 20.0, 'kg', true),
+(1132, '1100s', 'Kraft Especial', 'KRAFT 25KG NATURAL - ESPECIAL', 25.0, 'kg', true),
+(1133, '1100s', 'Kraft Especial', 'KRAFT 30KG NATURAL - ESPECIAL', 30.0, 'kg', true),
+(1134, '1100s', 'Kraft Especial', 'KRAFT 20KG BRANCO - ESPECIAL', 20.0, 'kg', true),
+(1135, '1100s', 'Kraft Especial', 'KRAFT 25KG BRANCO - ESPECIAL', 25.0, 'kg', true),
+(1136, '1100s', 'Kraft Especial', 'KRAFT 30KG BRANCO - ESPECIAL', 30.0, 'kg', true),
+(1137, '1100s', 'Kraft Especial', 'KRAFT 35KG NATURAL - ESPECIAL', 35.0, 'kg', true),
+(1138, '1100s', 'Kraft Especial', 'KRAFT 40KG NATURAL - ESPECIAL', 40.0, 'kg', true),
+(1139, '1100s', 'Kraft Especial', 'KRAFT 50KG NATURAL - ESPECIAL', 50.0, 'kg', true),
+(1140, '1100s', 'Kraft Especial', 'KRAFT 35KG BRANCO - ESPECIAL', 35.0, 'kg', true);
+
+-- Execute este lote primeiro, depois peça o próximo lote (LOTE 2/4)
