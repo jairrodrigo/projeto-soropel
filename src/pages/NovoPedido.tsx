@@ -1,126 +1,139 @@
 import React from 'react';
-import { Camera, Upload, FileText, AlertCircle } from 'lucide-react';
-import { useUIStore } from '@/stores';
+import { Save, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { useNovoPedido } from '@/hooks/useNovoPedido';
+import { CameraSection, ProcessingStatus, FormSection } from '@/components/novo-pedido';
 
 export const NovoPedidoPage: React.FC = () => {
-  const { showNotification } = useUIStore();
+  const {
+    formData,
+    cameraState,
+    formState,
+    processedData,
+    videoRef,
+    canvasRef,
+    updateFormData,
+    activateCamera,
+    captureImage,
+    uploadImage,
+    savePedido,
+    resetProcess
+  } = useNovoPedido();
 
-  const handleCameraCapture = () => {
-    showNotification('📷 Funcionalidade de câmera em desenvolvimento...', 'info');
-  };
-
-  const handleFileUpload = () => {
-    showNotification('📁 Upload de arquivo em desenvolvimento...', 'info');
-  };
-
-  const handleManualEntry = () => {
-    showNotification('✍️ Entrada manual em desenvolvimento...', 'info');
-  };
+  const canSave = formData.numeroOrdem && formData.cliente.nomeFantasia && formData.produtos.length > 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Novo Pedido</h1>
-        <p className="text-gray-600">Registre um novo pedido via imagem ou entrada manual</p>
-      </div>
-
-      {/* Status Alert */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-        <div className="flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600" />
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-yellow-800">Funcionalidade em Desenvolvimento</h3>
-            <p className="text-sm text-yellow-700">
-              A página completa de Novo Pedido está sendo implementada. 
-              Use a página "Pedidos" para gerenciar pedidos existentes.
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Novo Pedido</h1>
+            <p className="text-gray-600">Capture uma ordem de produção para criar um novo pedido</p>
           </div>
+          
+          {formState.hasExtractedData && (
+            <div className="flex items-center space-x-2 bg-green-100 px-4 py-2 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-medium text-green-800">
+                Dados extraídos: {processedData?.produtos.length || 0} produtos
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Options Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Camera Capture */}
-        <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <Camera className="w-8 h-8 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Capturar por Câmera</h3>
-            <p className="text-sm text-gray-600">
-              Fotografe o documento de pedido para processamento automático
-            </p>
-            <button
-              onClick={handleCameraCapture}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Abrir Câmera
-            </button>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Coluna Esquerda - Câmera e Status */}
+        <div className="lg:col-span-1 space-y-6">
+          <CameraSection
+            cameraState={cameraState}
+            videoRef={videoRef}
+            canvasRef={canvasRef}
+            onActivateCamera={activateCamera}
+            onCaptureImage={captureImage}
+            onUploadImage={uploadImage}
+          />
+          
+          <ProcessingStatus
+            isProcessing={formState.isProcessing}
+            hasExtractedData={formState.hasExtractedData}
+            currentStep={formState.currentStep}
+          />
         </div>
 
-        {/* File Upload */}
-        <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <Upload className="w-8 h-8 text-green-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Upload de Arquivo</h3>
-            <p className="text-sm text-gray-600">
-              Envie uma imagem ou documento do pedido
-            </p>
-            <button
-              onClick={handleFileUpload}
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              Selecionar Arquivo
-            </button>
-          </div>
-        </div>
-
-        {/* Manual Entry */}
-        <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-              <FileText className="w-8 h-8 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Entrada Manual</h3>
-            <p className="text-sm text-gray-600">
-              Digite os dados do pedido manualmente
-            </p>
-            <button
-              onClick={handleManualEntry}
-              className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-            >
-              Criar Manualmente
-            </button>
-          </div>
+        {/* Coluna Direita - Formulário */}
+        <div className="lg:col-span-2">
+          <FormSection
+            formData={formData}
+            onUpdateFormData={updateFormData}
+            hasExtractedData={formState.hasExtractedData}
+          />
         </div>
       </div>
 
-      {/* Instructions */}
+      {/* Ações */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Como usar</h3>
-        <div className="space-y-3 text-sm text-gray-600">
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
-            <p>Escolha o método de entrada do pedido (câmera, upload ou manual)</p>
+        <div className="flex flex-col md:flex-row gap-4 justify-end">
+          <button
+            onClick={resetProcess}
+            className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            <RotateCcw className="w-5 h-5" />
+            <span>Reiniciar</span>
+          </button>
+          
+          <button
+            onClick={savePedido}
+            disabled={!canSave || formState.isProcessing}
+            className={`flex items-center justify-center space-x-2 px-8 py-3 rounded-lg transition ${
+              canSave && !formState.isProcessing
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Save className="w-5 h-5" />
+            <span className="font-semibold">
+              {formState.isProcessing ? 'Salvando...' : 'Salvar Pedido'}
+            </span>
+          </button>
+        </div>
+        
+        {!canSave && (
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              ℹ️ Preencha os campos obrigatórios: Número da ordem, Nome do cliente e pelo menos um produto
+            </p>
           </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
-            <p>O sistema processará automaticamente os dados do pedido</p>
+        )}
+      </div>
+
+      {/* Resumo dos Dados Extraídos */}
+      {processedData && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-4">
+            Resumo dos Dados Extraídos
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="font-medium text-blue-800">Ordem: {processedData.numeroOrdem}</p>
+              <p className="text-blue-700">Cliente: {processedData.cliente.nomeFantasia}</p>
+              <p className="text-blue-700">Entrega: {new Date(processedData.dataEntrega).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <div>
+              <p className="font-medium text-blue-800">Total de Produtos: {processedData.produtos.length}</p>
+              <p className="text-blue-700">Quantidade Total: {processedData.quantidadeTotal.toFixed(3)} MIL</p>
+              <p className="text-blue-700">CNPJ: {processedData.cliente.cnpj}</p>
+            </div>
           </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
-            <p>Revise e confirme as informações antes de salvar</p>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
-            <p>O pedido será adicionado à lista de gestão na página "Pedidos"</p>
+          
+          <div className="mt-4">
+            <p className="text-xs text-blue-600">
+              ✨ Dados processados automaticamente via OCR. Revise e edite conforme necessário antes de salvar.
+            </p>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
