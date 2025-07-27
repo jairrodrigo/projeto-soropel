@@ -39,7 +39,7 @@ export const Sidebar: React.FC<{
   const { sidebarCollapsed, toggleSidebar, showNotification } = useUIStore()
 
   const handleMenuItemClick = (item: MenuItem) => {
-    if (onPageChange && (item.id === 'dashboard' || item.id === 'nova-bobina' || item.id === 'pedidos')) {
+    if (onPageChange && (item.id === 'dashboard' || item.id === 'nova-bobina' || item.id === 'novo-pedido' || item.id === 'pedidos')) {
       onPageChange(item.id)
       showNotification({
         message: `📱 Navegando para ${item.label}...`,
