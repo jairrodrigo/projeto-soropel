@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { 
   ClipboardList, 
   Package, 
@@ -15,11 +15,44 @@ import { MetricCard, AlertPanel, MachineGrid } from '@/components/dashboard'
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { useDashboardStore, useUIStore } from '@/stores'
 import { formatNumber, getTimeAgo } from '@/utils'
-import { mockMachines, mockAlerts, mockActivities } from '@/services/mockData'
 
 export const DashboardPage: React.FC = () => {
-  const { metrics, production, isLoading } = useDashboardStore()
+  const { 
+    metrics, 
+    production, 
+    machines, 
+    alerts, 
+    activities, 
+    isLoading, 
+    connectionStatus, 
+    refreshData, 
+    testConnection 
+  } = useDashboardStore()
   const { showNotification } = useUIStore()
+
+  // 🔄 Carregar dados reais ao montar componente
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      console.log('🚀 Carregando dashboard com dados reais...')
+      
+      // Testar conexão primeiro
+      const connected = await testConnection()
+      if (connected) {
+        await refreshData()
+        showNotification({ 
+          message: '✅ Dashboard conectado ao Supabase!', 
+          type: 'success' 
+        })
+      } else {
+        showNotification({ 
+          message: '⚠️ Problema na conexão com banco de dados', 
+          type: 'warning' 
+        })
+      }
+    }
+
+    loadDashboardData()
+  }, [refreshData, testConnection, showNotification])
 
   // Mock quick actions
   const quickActions = [
@@ -85,9 +118,22 @@ export const DashboardPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="text-sm text-gray-500">
-            <span className="text-green-600">●</span> Online • Última atualização: há 2 seg
+            <span className={`${
+              connectionStatus === 'connected' ? 'text-green-600' : 
+              connectionStatus === 'error' ? 'text-red-600' : 'text-yellow-600'
+            }`}>●</span> 
+            {connectionStatus === 'connected' ? 'Online' : 
+             connectionStatus === 'error' ? 'Offline' : 'Conectando...'}
+            {connectionStatus === 'connected' && ' • Última atualização: há 2 seg'}
           </div>
         </div>
+        <button
+          onClick={refreshData}
+          disabled={isLoading}
+          className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+        >
+          {isLoading ? '🔄 Atualizando...' : '🔄 Atualizar dados'}
+        </button>
       </div>
 
       {/* Metric Cards */}
@@ -204,7 +250,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Alerts Panel */}
       <AlertPanel 
-        alerts={mockAlerts}
+        alerts={alerts}
         onDismiss={(id) => showNotification({ 
           message: '✅ Alerta removido', 
           type: 'success' 
@@ -212,7 +258,17 @@ export const DashboardPage: React.FC = () => {
       />
 
       {/* Machine Grid */}
-      <MachineGrid machines={mockMachines} />
+      <MachineGrid machines={machines} />
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span>Carregando dados...</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

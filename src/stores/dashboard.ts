@@ -7,6 +7,13 @@ import type {
   Alert, 
   Activity 
 } from '@/types'
+import { 
+  refreshDashboardData,
+  testDashboardConnection,
+  type DashboardMetrics,
+  type ProductionData
+} from '@/services/dashboardService'
+import type { Machine, Alert, Activity } from '@/types'
 
 interface DashboardState {
   // Data
@@ -19,6 +26,7 @@ interface DashboardState {
   // UI State
   isLoading: boolean
   lastUpdate: Date | null
+  connectionStatus: 'connecting' | 'connected' | 'error'
   
   // Actions
   updateMetrics: (metrics: Partial<DashboardMetrics>) => void
@@ -29,6 +37,7 @@ interface DashboardState {
   addActivity: (activity: Activity) => void
   setLoading: (loading: boolean) => void
   refreshData: () => Promise<void>
+  testConnection: () => Promise<boolean>
 }
 
 const initialMetrics: DashboardMetrics = {
@@ -66,6 +75,7 @@ export const useDashboardStore = create<DashboardState>()(
         activities: [],
         isLoading: false,
         lastUpdate: null,
+        connectionStatus: 'connecting',
         
         // Actions
         updateMetrics: (newMetrics) =>
@@ -104,22 +114,56 @@ export const useDashboardStore = create<DashboardState>()(
           set({ isLoading: true })
           
           try {
-            // Simulate API calls - replace with real Supabase calls later
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            console.log('🔄 Atualizando dados do dashboard...')
             
-            // Update with fresh data
-            const state = get()
+            // Buscar todos os dados reais do Supabase
+            const dashboardData = await refreshDashboardData()
+            
+            // Atualizar estado com dados reais
             set({
-              production: {
-                ...state.production,
-                realizado: state.production.realizado + Math.floor(Math.random() * 100) + 10
-              },
+              metrics: dashboardData.metrics || get().metrics,
+              production: dashboardData.production || get().production,
+              machines: dashboardData.machines || [],
+              alerts: dashboardData.alerts || [],
+              activities: dashboardData.activities || [],
               lastUpdate: new Date(),
+              connectionStatus: 'connected',
               isLoading: false
             })
+            
+            console.log('✅ Dashboard atualizado com dados reais!')
+            
+            // Log dos dados carregados
+            if (dashboardData.metrics) {
+              console.log('📊 Métricas carregadas:', dashboardData.metrics)
+            }
+            if (dashboardData.machines) {
+              console.log('🤖 Máquinas carregadas:', dashboardData.machines.length)
+            }
+            if (dashboardData.alerts) {
+              console.log('🚨 Alertas carregados:', dashboardData.alerts.length)
+            }
+            
           } catch (error) {
-            console.error('Error refreshing data:', error)
-            set({ isLoading: false })
+            console.error('❌ Erro ao atualizar dashboard:', error)
+            set({ 
+              isLoading: false,
+              connectionStatus: 'error'
+            })
+          }
+        },
+        
+        testConnection: async () => {
+          try {
+            const result = await testDashboardConnection()
+            set({ 
+              connectionStatus: result.success ? 'connected' : 'error' 
+            })
+            return result.success
+          } catch (error) {
+            console.error('❌ Erro ao testar conexão:', error)
+            set({ connectionStatus: 'error' })
+            return false
           }
         }
       }),
