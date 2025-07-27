@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { MainLayout } from '@/components/layout'
-import { DashboardPage, NovaBobinaPage } from '@/pages'
+import { DashboardPage, NovaBobinaPage, PedidosPage } from '@/pages'
 import '@/index.css'
 
-type PageType = 'dashboard' | 'nova-bobina'
+type PageType = 'dashboard' | 'nova-bobina' | 'pedidos'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard')
@@ -12,6 +12,8 @@ function App() {
     switch (currentPage) {
       case 'nova-bobina':
         return <NovaBobinaPage />
+      case 'pedidos':
+        return <PedidosPage />
       case 'dashboard':
       default:
         return <DashboardPage />
