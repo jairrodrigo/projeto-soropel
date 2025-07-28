@@ -1,4 +1,4 @@
 export { DashboardPage } from './Dashboard'
-export { NovaBobinaPage } from './nova-bobina'
+export { NovaBobinaPage } from './nova-bobina/NovaBobinaPage'
 export { NovoPedidoPage } from './NovoPedido'
 export { PedidosPage } from './Pedidos'
