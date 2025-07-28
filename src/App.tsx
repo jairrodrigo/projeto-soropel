@@ -1,31 +1,27 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
-import { DashboardPage, NovaBobinaPage, NovoPedidoPage, PedidosPage } from '@/pages'
+import { 
+  DashboardPage, 
+  NovaBobinaPage, 
+  NovoPedidoPage, 
+  PedidosPage 
+} from '@/pages'
 
-type PageType = 'dashboard' | 'nova-bobina' | 'novo-pedido' | 'pedidos'
-
-function App() {
-  const [currentPage, setCurrentPage] = useState<PageType>('dashboard')
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'nova-bobina':
-        return <NovaBobinaPage />
-      case 'novo-pedido':
-        return <NovoPedidoPage />
-      case 'pedidos':
-        return <PedidosPage />
-      case 'dashboard':
-      default:
-        return <DashboardPage />
-    }
-  }
-
+export default function App() {
   return (
-    <MainLayout currentPage={currentPage} onPageChange={setCurrentPage}>
-      {renderPage()}
-    </MainLayout>
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        <MainLayout>
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/nova-bobina" element={<NovaBobinaPage />} />
+            <Route path="/novo-pedido" element={<NovoPedidoPage />} />
+            <Route path="/pedidos" element={<PedidosPage />} />
+          </Routes>
+        </MainLayout>
+      </div>
+    </Router>
   )
 }
-
-export default App
