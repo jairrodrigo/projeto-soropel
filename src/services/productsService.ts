@@ -1,7 +1,7 @@
 // 📦 Products Service - Sistema Soropel
 // Serviços para interação com produtos no Supabase
 
-import { supabase } from '../lib/supabase'
+import { supabase, isSupabaseAvailable, createSupabaseUnavailableError } from '../lib/supabase'
 import type { Product, ProductFilters, DatabaseResult, PaginatedResponse } from '../types/supabase'
 
 // 🔍 BUSCAR PRODUTOS
@@ -10,8 +10,14 @@ export const getProducts = async (
   page = 1,
   pageSize = 50
 ): Promise<DatabaseResult<PaginatedResponse<Product>>> => {
+  
+  // 🛡️ Verificar se Supabase está disponível
+  if (!isSupabaseAvailable()) {
+    return createSupabaseUnavailableError() as DatabaseResult<PaginatedResponse<Product>>
+  }
+  
   try {
-    let query = supabase
+    let query = supabase!
       .from('products')
       .select('*', { count: 'exact' })
 

@@ -1,7 +1,7 @@
 // 📊 Dashboard Service - Sistema Soropel
 // Serviços para buscar dados reais do dashboard no Supabase
 
-import { supabase } from '../lib/supabase'
+import { supabase, isSupabaseAvailable, createSupabaseUnavailableError } from '../lib/supabase'
 import type { DatabaseResult } from '../types/supabase'
 import type { Machine, Alert, Activity } from '../types/dashboard'
 
@@ -76,23 +76,29 @@ const convertSupabaseActivityToFrontend = (supabaseActivity: any): Activity => (
 
 // 📊 BUSCAR MÉTRICAS DO DASHBOARD
 export const getDashboardMetrics = async (): Promise<DatabaseResult<DashboardMetrics>> => {
+  
+  // 🛡️ Verificar se Supabase está disponível
+  if (!isSupabaseAvailable()) {
+    return createSupabaseUnavailableError() as DatabaseResult<DashboardMetrics>
+  }
+  
   try {
     // Buscar dados de várias tabelas em paralelo
     const [ordersResult, bobinasResult, machinesResult] = await Promise.all([
       // Pedidos em andamento
-      supabase
+      supabase!
         .from('orders')
         .select('id, status')
         .in('status', ['pendente', 'producao']),
         
       // Bobinas em uso
-      supabase
+      supabase!
         .from('bobinas')
         .select('id, status')
         .eq('status', 'em_maquina'),
         
       // Máquinas ativas
-      supabase
+      supabase!
         .from('machines')
         .select('id, status, efficiency_rate')
     ])

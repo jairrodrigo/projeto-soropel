@@ -12,10 +12,12 @@ const isSupabaseEnabled = import.meta.env.VITE_ENABLE_SUPABASE === 'true'
 if (isSupabaseEnabled && (!supabaseUrl || !supabaseAnonKey)) {
   console.error('🚨 Supabase configurado mas variáveis de ambiente faltando!')
   console.error('Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env')
+  throw new Error('Supabase configuration missing: URL and/or ANON_KEY not provided')
 }
 
-// 🚀 Cliente Supabase configurado
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// 🚀 Cliente Supabase configurado - só cria se variáveis existirem
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -30,6 +32,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+  : null // Fallback se variáveis não existirem
 
 // 🎯 Configurações específicas do sistema
 export const config = {
@@ -62,8 +65,8 @@ export const config = {
 
 // 🧪 Função de teste de conexão
 export const testSupabaseConnection = async () => {
-  if (!isSupabaseEnabled) {
-    return { success: false, error: 'Supabase não habilitado' }
+  if (!isSupabaseEnabled || !supabase) {
+    return { success: false, error: 'Supabase não habilitado ou não configurado' }
   }
   
   try {
@@ -79,6 +82,20 @@ export const testSupabaseConnection = async () => {
   } catch (err) {
     console.error('❌ Erro inesperado:', err)
     return { success: false, error: 'Erro de conexão' }
+  }
+}
+
+// 🛡️ Verificação de disponibilidade do Supabase
+export const isSupabaseAvailable = (): boolean => {
+  return Boolean(supabase && isSupabaseEnabled)
+}
+
+// 🚨 Erro padrão para Supabase indisponível
+export const createSupabaseUnavailableError = () => {
+  return {
+    success: false,
+    error: 'Supabase não está disponível. Verifique as variáveis de ambiente.',
+    data: null
   }
 }
 
