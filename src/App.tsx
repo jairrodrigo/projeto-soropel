@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { MainLayout } from '@/components/layout'
 import { DashboardPage, NovaBobinaPage, NovoPedidoPage, PedidosPage } from '@/pages'
-import '@/index.css'
 
 type PageType = 'dashboard' | 'nova-bobina' | 'novo-pedido' | 'pedidos'
 
