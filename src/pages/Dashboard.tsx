@@ -62,7 +62,7 @@ export const DashboardPage: React.FC = () => {
       description: 'Nova Bobina',
       icon: Camera,
       color: 'bg-blue-600 hover:bg-blue-700',
-      action: () => showNotification({ message: '📷 Abrindo Nova Bobina...', type: 'info' })
+      action: () => showNotification({ message: ' Abrindo Nova Bobina...', type: 'info' })
     },
     {
       id: 'novo-pedido',

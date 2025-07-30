@@ -124,7 +124,7 @@ export const getDashboardMetrics = async (): Promise<DatabaseResult<DashboardMet
 
     // Buscar sobras de hoje
     const today = new Date().toISOString().split('T')[0]
-    const { data: sobras } = await supabase
+    const { data: sobras } = await supabase!
       .from('bobinas')
       .select('id')
       .eq('status', 'sobra')
@@ -150,6 +150,11 @@ export const getDashboardMetrics = async (): Promise<DatabaseResult<DashboardMet
 
 // 📈 BUSCAR DADOS DE PRODUÇÃO
 export const getProductionData = async (): Promise<DatabaseResult<ProductionData>> => {
+  // 🛡️ Verificar se Supabase está disponível
+  if (!isSupabaseAvailable() || !supabase) {
+    return createSupabaseUnavailableError() as DatabaseResult<ProductionData>
+  }
+
   try {
     // Buscar dados de produção atual
     const { data: tracking, error: trackingError } = await supabase
@@ -186,6 +191,11 @@ export const getProductionData = async (): Promise<DatabaseResult<ProductionData
 
 // 🤖 BUSCAR STATUS DAS MÁQUINAS
 export const getMachinesStatus = async (): Promise<DatabaseResult<Machine[]>> => {
+  // 🛡️ Verificar se Supabase está disponível
+  if (!isSupabaseAvailable() || !supabase) {
+    return createSupabaseUnavailableError() as DatabaseResult<Machine[]>
+  }
+
   try {
     const { data, error } = await supabase
       .from('machines')
@@ -220,6 +230,11 @@ export const getMachinesStatus = async (): Promise<DatabaseResult<Machine[]>> =>
 
 // 🚨 BUSCAR ALERTAS ATIVOS
 export const getActiveAlerts = async (): Promise<DatabaseResult<Alert[]>> => {
+  // 🛡️ Verificar se Supabase está disponível
+  if (!isSupabaseAvailable() || !supabase) {
+    return createSupabaseUnavailableError() as DatabaseResult<Alert[]>
+  }
+
   try {
     const { data, error } = await supabase
       .from('alerts')
@@ -246,6 +261,11 @@ export const getActiveAlerts = async (): Promise<DatabaseResult<Alert[]>> => {
 
 // 📝 BUSCAR ATIVIDADES RECENTES
 export const getRecentActivities = async (limit = 20): Promise<DatabaseResult<Activity[]>> => {
+  // 🛡️ Verificar se Supabase está disponível
+  if (!isSupabaseAvailable() || !supabase) {
+    return createSupabaseUnavailableError() as DatabaseResult<Activity[]>
+  }
+
   try {
     const { data, error } = await supabase
       .from('activities')
@@ -301,6 +321,12 @@ export const refreshDashboardData = async () => {
 
 // 🧪 TESTAR CONEXÃO COM DADOS DO DASHBOARD
 export const testDashboardConnection = async () => {
+  // 🛡️ Verificar se Supabase está disponível ANTES de usar
+  if (!isSupabaseAvailable() || !supabase) {
+    console.warn('⚠️ Supabase não disponível - variáveis de ambiente não carregadas')
+    return { success: false, error: 'Supabase client não inicializado - verifique variáveis de ambiente' }
+  }
+
   try {
     const { data: count } = await supabase
       .from('production_tracking')

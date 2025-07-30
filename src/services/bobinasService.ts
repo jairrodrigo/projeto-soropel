@@ -153,68 +153,144 @@ export const getBobinas = async (
 // ➕ CRIAR NOVA BOBINA
 export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseResult<Bobina>> => {
   try {
-    console.log('🚀 Criando nova bobina:', bobinaData)
+    console.log('🚀 Criando nova bobina - dados recebidos:', bobinaData)
+    console.log('🔍 Fornecedor para processar:', bobinaData.supplier_name)
+    console.log('🔍 Tipo de papel para processar:', bobinaData.paper_type_name)
 
     // 🔍 Buscar ou criar fornecedor
     let supplier_id: string
     
-    const { data: existingSupplier } = await supabase
+    console.log('📋 Buscando fornecedor existente...')
+    const { data: existingSupplier, error: searchSupplierError } = await supabase
       .from('suppliers')
       .select('id')
       .eq('name', bobinaData.supplier_name)
       .single()
 
+    if (searchSupplierError && searchSupplierError.code !== 'PGRST116') {
+      console.error('❌ Erro ao buscar fornecedor:', searchSupplierError)
+      return { error: `Erro ao buscar fornecedor: ${searchSupplierError.message}` }
+    }
+
     if (existingSupplier) {
       supplier_id = existingSupplier.id
+      console.log('✅ Fornecedor encontrado com ID:', supplier_id)
     } else {
-      // Criar novo fornecedor
+      // Criar novo fornecedor (usando campos corretos)
+      console.log('➕ Criando novo fornecedor:', bobinaData.supplier_name)
       const { data: newSupplier, error: supplierError } = await supabase
         .from('suppliers')
         .insert([{
           name: bobinaData.supplier_name,
-          tipo: 'papel',
-          ativo: true
+          contact_person: `Fornecedor criado automaticamente via IA em ${new Date().toLocaleDateString('pt-BR')}`,
+          active: true,
+          created_at: new Date().toISOString()
         }])
         .select('id')
         .single()
 
-      if (supplierError || !newSupplier) {
-        console.error('❌ Erro ao criar fornecedor:', supplierError)
-        return { error: 'Erro ao processar fornecedor' }
+      if (supplierError) {
+        console.error('❌ Erro detalhado ao criar fornecedor:', {
+          error: supplierError,
+          message: supplierError.message,
+          code: supplierError.code,
+          details: supplierError.details,
+          hint: supplierError.hint
+        })
+        
+        // Se erro por duplicata, tentar buscar o fornecedor existente
+        if (supplierError.code === '23505') {
+          console.log('🔄 Tentando buscar fornecedor duplicado...')
+          const { data: duplicateSupplier } = await supabase
+            .from('suppliers')
+            .select('id')
+            .ilike('name', bobinaData.supplier_name)
+            .single()
+          
+          if (duplicateSupplier) {
+            console.log('✅ Fornecedor encontrado após duplicata:', duplicateSupplier.id)
+            supplier_id = duplicateSupplier.id
+          } else {
+            return { error: `Erro ao processar fornecedor: ${supplierError.message}` }
+          }
+        } else {
+          return { error: `Erro ao processar fornecedor: ${supplierError.message}` }
+        }
+      } else if (!newSupplier) {
+        console.error('❌ Fornecedor criado mas sem dados retornados')
+        return { error: 'Erro ao processar fornecedor - dados não retornados' }
+      } else {
+        supplier_id = newSupplier.id
+        console.log('✅ Fornecedor criado com ID:', supplier_id)
       }
-
-      supplier_id = newSupplier.id
     }
 
     // 🔍 Buscar ou criar tipo de papel
     let paper_type_id: string
     
-    const { data: existingPaperType } = await supabase
+    console.log('📋 Buscando tipo de papel existente...')
+    const { data: existingPaperType, error: searchPaperTypeError } = await supabase
       .from('paper_types')
       .select('id')
       .eq('name', bobinaData.paper_type_name)
       .single()
 
+    if (searchPaperTypeError && searchPaperTypeError.code !== 'PGRST116') {
+      console.error('❌ Erro ao buscar tipo de papel:', searchPaperTypeError)
+      return { error: `Erro ao buscar tipo de papel: ${searchPaperTypeError.message}` }
+    }
+
     if (existingPaperType) {
       paper_type_id = existingPaperType.id
+      console.log('✅ Tipo de papel encontrado com ID:', paper_type_id)
     } else {
-      // Criar novo tipo de papel
+      // Criar novo tipo de papel (usando campos corretos)
+      console.log('➕ Criando novo tipo de papel:', bobinaData.paper_type_name)
       const { data: newPaperType, error: paperTypeError } = await supabase
         .from('paper_types')
         .insert([{
           name: bobinaData.paper_type_name,
-          categoria: 'kraft', // Default
-          ativo: true
+          description: `Tipo de papel criado automaticamente via IA em ${new Date().toLocaleDateString('pt-BR')}`,
+          active: true,
+          created_at: new Date().toISOString()
         }])
         .select('id')
         .single()
 
-      if (paperTypeError || !newPaperType) {
-        console.error('❌ Erro ao criar tipo de papel:', paperTypeError)
-        return { error: 'Erro ao processar tipo de papel' }
+      if (paperTypeError) {
+        console.error('❌ Erro detalhado ao criar tipo de papel:', {
+          error: paperTypeError,
+          message: paperTypeError.message,
+          code: paperTypeError.code,
+          details: paperTypeError.details,
+          hint: paperTypeError.hint
+        })
+        
+        // Se erro por duplicata, tentar buscar o tipo existente
+        if (paperTypeError.code === '23505') {
+          console.log('🔄 Tentando buscar tipo de papel duplicado...')
+          const { data: duplicatePaperType } = await supabase
+            .from('paper_types')
+            .select('id')
+            .ilike('name', bobinaData.paper_type_name)
+            .single()
+          
+          if (duplicatePaperType) {
+            console.log('✅ Tipo de papel encontrado após duplicata:', duplicatePaperType.id)
+            paper_type_id = duplicatePaperType.id
+          } else {
+            return { error: `Erro ao processar tipo de papel: ${paperTypeError.message}` }
+          }
+        } else {
+          return { error: `Erro ao processar tipo de papel: ${paperTypeError.message}` }
+        }
+      } else if (!newPaperType) {
+        console.error('❌ Tipo de papel criado mas sem dados retornados')
+        return { error: 'Erro ao processar tipo de papel - dados não retornados' }
+      } else {
+        paper_type_id = newPaperType.id
+        console.log('✅ Tipo de papel criado com ID:', paper_type_id)
       }
-
-      paper_type_id = newPaperType.id
     }
 
     // 💾 Criar bobina

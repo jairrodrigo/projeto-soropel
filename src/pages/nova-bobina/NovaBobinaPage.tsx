@@ -52,7 +52,7 @@ export const NovaBobinaPage: React.FC = () => {
     <div className="max-w-7xl mx-auto p-3 md:p-6">
       {/* Title Section */}
       <div className="mb-6 text-center px-2">
-        <h2 className="text-4xl font-bold text-gray-800 mb-3">📷 Nova Bobina</h2>
+        <h2 className="text-4xl font-bold text-gray-800 mb-3"> Nova Bobina</h2>
         <p className="text-gray-600 text-lg px-4">
           Registre uma nova bobina via análise inteligente de imagem do rótulo
         </p>
