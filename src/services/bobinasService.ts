@@ -246,9 +246,17 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
     } else {
       // Criar novo tipo de papel (usando campos corretos)
       console.log('➕ Criando novo tipo de papel:', bobinaData.paper_type_name)
+      
+      // Gerar código automático baseado no nome (ex: MIX038 -> MIX038, Papel Novo -> PAPELNOVO)
+      const paperCode = bobinaData.paper_type_name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .substring(0, 10)
+      
       const { data: newPaperType, error: paperTypeError } = await supabase
         .from('paper_types')
         .insert([{
+          code: paperCode,
           name: bobinaData.paper_type_name,
           description: `Tipo de papel criado automaticamente via IA em ${new Date().toLocaleDateString('pt-BR')}`,
           active: true,

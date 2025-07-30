@@ -26,6 +26,39 @@ WHERE active IS NULL;
 - ✅ Sistema OCR + Supabase 100% funcional
 - ✅ Nova Bobina operacional sem erros
 
+---
+
+## 🔧 Migration: add_description_column_paper_types  
+**Data:** 30/01/2025 03:08 UTC  
+**Commit:** Second hotfix  
+**Problema:** Coluna 'description' faltando na tabela paper_types
+
+### ❌ Erro Identificado:
+```
+Could not find the 'description' column of 'paper_types' in the schema cache
+```
+
+### ✅ Solução Aplicada:
+```sql
+ALTER TABLE paper_types 
+ADD COLUMN description TEXT;
+
+UPDATE paper_types 
+SET description = CONCAT('Tipo de papel ', name, ' - categoria ', COALESCE(category, 'padrão'))
+WHERE description IS NULL;
+```
+
+### 🔧 Correção Código:
+- Adicionado geração automática de `code` no bobinasService.ts
+- Code gerado: `paper_type_name.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10)`
+- Exemplo: "MIX038" -> "MIX038", "Papel Novo" -> "PAPELNOVO"
+
+### 🎯 Resultado:
+- ✅ Coluna `description` adicionada com sucesso
+- ✅ 25 registros existentes com descriptions
+- ✅ Código corrigido para incluir campo `code` obrigatório
+- ✅ Sistema OCR + criação automática de paper_types 100% funcional
+
 ### 📋 Estrutura Final paper_types:
 - id (uuid)
 - code (varchar) 
