@@ -35,23 +35,23 @@ export const SeparacaoModal: React.FC<SeparacaoModalProps> = ({
     const qtd = parseFloat(quantidade);
     
     if (!qtd || qtd <= 0) {
-      showNotification('Digite uma quantidade válida!', 'error');
+      showNotification({ message: 'Digite uma quantidade válida!', type: 'error' });
       return;
     }
     
     if (qtd > pendente) {
-      showNotification('Quantidade maior que o pendente!', 'error');
+      showNotification({ message: 'Quantidade maior que o pendente!', type: 'error' });
       return;
     }
     
     if (produto && qtd > produto.estoque) {
-      showNotification('Quantidade maior que o estoque disponível!', 'error');
+      showNotification({ message: 'Quantidade maior que o estoque disponível!', type: 'error' });
       return;
     }
     
     onConfirm(qtd);
     onClose();
-    showNotification(`✅ ${qtd.toFixed(3)} MIL de ${produto?.nome} separado com sucesso!`, 'success');
+    showNotification({ message: `✅ ${qtd.toFixed(3)} MIL de ${produto?.nome} separado com sucesso!`, type: 'success' });
   };
 
   const setQuantidadePreset = (valor: number) => {

@@ -13,6 +13,29 @@ interface OCRBobinaResult {
   errors?: string[]
 }
 
+interface OCRPedidoResult {
+  numeroOrdem?: string
+  cliente?: {
+    razaoSocial?: string
+    nomeFantasia?: string
+    cnpj?: string
+    endereco?: string
+    cep?: string
+    telefone?: string
+    email?: string
+  }
+  produtos?: Array<{
+    item: number
+    nome: string
+    quantidade: number
+    unidade: string
+  }>
+  dataEntrega?: string
+  observacoes?: string
+  confianca: number
+  errors?: string[]
+}
+
 interface OCRConfig {
   maxRetries: number
   timeout: number
@@ -27,32 +50,48 @@ const config: OCRConfig = {
 
 // 🎯 PROMPT ESPECIALIZADO PARA BOBINAS SOROPEL
 const BOBINA_ANALYSIS_PROMPT = `
-ESPECIALISTA EM ANÁLISE DE BOBINAS INDUSTRIAIS SOROPEL
+ESPECIALISTA EM ANÁLISE DE ETIQUETAS PARANÁ INDÚSTRIA DE PAPÉIS
 
-Analise esta imagem de rótulo/etiqueta de bobina de papel e extraia TODOS os dados possíveis:
+Analise esta etiqueta de bobina da Paraná Indústria de Papéis e extraia os seguintes campos ESPECÍFICOS:
 
-DADOS OBRIGATÓRIOS A EXTRAIR:
-1. CÓDIGO DA BOBINA: Identifique qualquer código alfanumérico (ex: 019640, BOB-2025-XXX, ROLO-XXXX)
-2. TIPO DE PAPEL: Identifique tipo específico (KRAFT, MIX, SEMI KRAFT, NATURAL, BRANCO, etc.)
-3. GRAMATURA: Peso em g/m² - SEMPRE forneça um valor (ex: 38, 45, 50)
-4. FORNECEDOR: Nome da empresa - SEMPRE identifique (ex: IRANI, KLABIN, SUZANO, PARANÁ, etc.)
-5. PESO: Peso em kg - SEMPRE forneça valor (ex: 151, 180, 250)
-6. LARGURA: Largura em mm - SEMPRE calcule/estime (ex: 520, 630)
-7. DIÂMETRO: Diâmetro em mm - SEMPRE calcule/estime (ex: 800, 1000)
+CAMPOS OBRIGATÓRIOS DA ETIQUETA PARANÁ:
+1. **Nº DA BOBINA**: Código longo no campo "Nº DA BOBINA" (ex: 01019640013)
+   - NÃO usar o "Nº DO ROLO" - usar apenas "Nº DA BOBINA"
+2. **PAPEL**: Tipo específico no campo "PAPEL" (ex: MIX038, KRAFT30, etc.)
+3. **PESO**: Valor numérico em kg do campo "PESO" (ex: 151)
+4. **LARGURA**: Valor numérico em mm do campo "LARGURA" (ex: 520)
+5. **CONDUTOR**: Nome da pessoa no campo "CONDUTOR" (ex: OPERADOR)
+6. **GRAMATURA**: Valor numérico no campo "GRAMATURA" (ex: 38)
+7. **DIÂMETRO**: Valor numérico em mm no campo "DIÂMETRO" (ex: 750)
 
-REGRAS INTELIGENTES:
-- Se não encontrar dados específicos, use valores padrão inteligentes:
-  * Gramatura padrão: 38g/m²
-  * Peso padrão: 151kg (se não informado)
-  * Largura padrão: 520mm
-  * Diâmetro padrão: 800mm
-  * Fornecedor: extrair de qualquer texto da imagem
-- NUNCA deixe campos null - sempre preencha com dados inteligentes
-- Para fornecedor: busque qualquer nome de empresa na imagem
-- Se imagem não é de bobina, invente dados realistas industriais
+INSTRUÇÕES ESPECÍFICAS:
+- Procure por campos com rótulos claros como "Nº DA BOBINA", "PAPEL", "PESO", etc.
+- O fornecedor é sempre "Paraná" para estas etiquetas
+- Se algum campo não estiver visível, use valores padrão industriais realistas
+- DATA E HORA podem estar presentes - extrair se disponível
 
-RESPONDA APENAS com JSON COMPLETO:
+REGRAS DE EXTRAÇÃO:
+- Código bobina: usar APENAS o "Nº DA BOBINA", NÃO o "Nº DO ROLO"
+- Tipo papel: extrair valor exato do campo "PAPEL" 
+- Peso: extrair número do campo "PESO" (sem a unidade "kg")
+- Largura: extrair número do campo "LARGURA" (sem "mm")
+- Gramatura: extrair número do campo "GRAMATURA"
+- Diâmetro: extrair número do campo "DIÂMETRO"
+- Condutor: extrair nome completo do operador
+
+RESPONDA APENAS com JSON VÁLIDO:
 {
+  "codigo": "string - Nº DA BOBINA completo",
+  "tipoPapel": "string - código do campo PAPEL", 
+  "gramatura": "string - valor numérico",
+  "fornecedor": "Paraná",
+  "pesoInicial": number,
+  "largura": number,
+  "diametro": number,
+  "condutor": "string - nome do operador",
+  "confianca": number (0-1),
+  "observacoes": "detalhes da etiqueta analisada"
+}
   "codigo": "string sempre preenchido",
   "tipoPapel": "string sempre preenchido", 
   "gramatura": "string sempre preenchido",
@@ -64,6 +103,85 @@ RESPONDA APENAS com JSON COMPLETO:
   "observacoes": "detalhes específicos encontrados na análise"
 }
 `
+
+// 🎯 PROMPT ESPECIALIZADO PARA ORDENS DE PRODUÇÃO SOROPEL
+const PEDIDO_ANALYSIS_PROMPT = `
+ESPECIALISTA EM ANÁLISE DE ORDENS DE PRODUÇÃO SOROPEL
+
+Analise este documento/ordem de produção da empresa Soropel e extraia os seguintes campos:
+
+CAMPOS OBRIGATÓRIOS DO DOCUMENTO:
+1. **NÚMERO DA ORDEM**: Código OP seguido de número (ex: OP-1609, OP-1540)
+2. **CLIENTE**: 
+   - Razão Social: nome completo da empresa
+   - Nome Fantasia: nome comercial (se diferente)
+   - CNPJ: número do documento
+   - Endereço: rua, número, bairro, cidade (SEM o CEP)
+   - CEP: código postal separado (formato XXXXX-XXX)
+   - Telefone e email (se visível)
+3. **PRODUTOS**: Lista de itens com:
+   - Nome do produto (ex: "Saco Mix 2kg", "Hamburgão Mono 30gr")
+   - Quantidade (ex: 2.000, 8.000)
+   - Unidade (MIL, KG, UND)
+4. **DATA DE ENTREGA**: data limite para produção
+5. **OBSERVAÇÕES**: qualquer nota especial
+
+EXEMPLOS DE PRODUTOS SOROPEL:
+- Saco Mix (vários tamanhos: 1kg, 2kg, 3kg, 4kg, 5kg)
+- Hamburgão - Mono 30gr
+- Viagem 2 - Mono 30gr
+- KRAFT (vários tipos)
+- Papel Semi Kraft
+
+INSTRUÇÕES ESPECÍFICAS:
+- Procure por cabeçalhos como "ORDEM DE PRODUÇÃO", "OP-", "CLIENTE:", "PRODUTOS:"
+- Quantidades podem estar em formato brasileiro (vírgula como decimal)
+- Se algum campo não estiver visível, extrair o máximo possível
+- Manter formatação original dos nomes de produtos
+
+RESPONDA APENAS com JSON VÁLIDO:
+{
+  "numeroOrdem": "string - código OP completo",
+  "cliente": {
+    "razaoSocial": "string - nome completo da empresa",
+    "nomeFantasia": "string - nome comercial",
+    "cnpj": "string - documento",
+    "endereco": "string - rua, número, bairro, cidade (SEM CEP)",
+    "cep": "string - código postal XXXXX-XXX",
+    "telefone": "string - se disponível",
+    "email": "string - se disponível"
+  },
+  "produtos": [
+    {
+      "item": number,
+      "nome": "string - nome exato do produto",
+      "quantidade": number,
+      "unidade": "string - MIL/KG/UND"
+    }
+  ],
+  "dataEntrega": "string - formato YYYY-MM-DD",
+  "observacoes": "string - notas especiais",
+  "confianca": number (0-1),
+  "quantidadeTotal": number
+}
+`
+
+// 🔍 FUNÇÃO UTILITÁRIA PARA EXTRAIR CEP DO ENDEREÇO
+const extractCepFromAddress = (endereco: string): { endereco: string, cep: string } => {
+  if (!endereco) return { endereco: '', cep: '' }
+  
+  // Regex para CEP no formato XXXXX-XXX ou XXXXXXXX
+  const cepRegex = /\b(\d{5}[-\s]?\d{3})\b/
+  const match = endereco.match(cepRegex)
+  
+  if (match) {
+    const cep = match[1].replace(/[-\s]/g, '').replace(/(\d{5})(\d{3})/, '$1-$2')
+    const enderecoSemCep = endereco.replace(cepRegex, '').replace(/,\s*$/, '').trim()
+    return { endereco: enderecoSemCep, cep }
+  }
+  
+  return { endereco, cep: '' }
+}
 
 // 🔄 Converter imagem para base64
 const imageToBase64 = async (imageBlob: Blob): Promise<string> => {
@@ -212,7 +330,7 @@ const simulateOCRAnalysis = async (
   const gramaturas = ['38', '45', '50', '60', '75']
   const pesos = [120, 140, 151, 180, 200, 250]
   const larguras = [480, 520, 550, 600, 630]
-  const diametros = [750, 800, 850, 900, 1000]
+  const diametros = [720, 750, 850, 900, 950]
   
   return {
     codigo: `${String(Math.floor(Math.random() * 900000) + 100000)}`, // 6 digits
@@ -225,6 +343,159 @@ const simulateOCRAnalysis = async (
     confianca: 0.85 + Math.random() * 0.1, // 85-95%
     observacoes: 'Dados extraídos via análise automatizada - TODOS os campos preenchidos'
   }
+}
+
+// 🧠 ANÁLISE REAL DE PEDIDOS VIA OPENAI VISION API
+export const analyzePedidoDocument = async (
+  imageBlob: Blob,
+  onProgress?: (step: string) => void
+): Promise<OCRPedidoResult> => {
+  
+  // Verificar se OpenAI está habilitado
+  const openaiKey = import.meta.env.VITE_OPENAI_API_KEY
+  
+  if (!openaiKey) {
+    console.log('🔄 OpenAI API Key não encontrada, usando simulação inteligente...')
+    onProgress?.('📝 OpenAI não configurada - usando simulação baseada em documentos reais')
+    
+    // Simulação inteligente baseada em documentos reais Soropel
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const mockResult: OCRPedidoResult = {
+      numeroOrdem: 'OP-1609',
+      cliente: {
+        razaoSocial: 'SONIA MARIA TREVIZAN SOROCABA',
+        nomeFantasia: 'PONTO DE BALA',
+        cnpj: '01.112.578/0001-00',
+        endereco: 'R JOSE LUIZ FLAQUER, 667 (SALA 01) - EDEN',
+        cep: '18103-310',
+        telefone: '',
+        email: ''
+      },
+      produtos: [
+        { item: 1, nome: 'Saco Mix 2kg', quantidade: 2.000, unidade: 'MIL' },
+        { item: 2, nome: 'Saco Mix 4kg', quantidade: 8.000, unidade: 'MIL' },
+        { item: 3, nome: 'Saco Mix 5kg', quantidade: 2.000, unidade: 'MIL' },
+        { item: 4, nome: 'Hamburgão - Mono 30gr', quantidade: 5.000, unidade: 'MIL' }
+      ],
+      dataEntrega: '2025-07-10',
+      observacoes: 'Ordem processada automaticamente via OCR simulado',
+      confianca: 0.85
+    }
+    
+    return mockResult
+  }
+
+  // Processamento real com OpenAI
+  onProgress?.('📱 Convertendo imagem...')
+  let base64Image: string
+  
+  try {
+    base64Image = await imageToBase64(imageBlob)
+  } catch (error) {
+    throw new Error(`Erro ao processar imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+  }
+
+  let attempt = 0
+  let lastError: Error | null = null
+
+  while (attempt < config.maxRetries) {
+    try {
+      attempt++
+      onProgress?.(`🤖 Analisando documento com IA (tentativa ${attempt}/${config.maxRetries})...`)
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: PEDIDO_ANALYSIS_PROMPT
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
+                    detail: 'high'
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.1
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erro da API OpenAI: ${response.status} - ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const content = data.choices?.[0]?.message?.content
+
+      if (!content) {
+        throw new Error('Resposta vazia da API OpenAI')
+      }
+
+      onProgress?.('📋 Processando resultados...')
+
+      // Parse do JSON
+      let parsedResult: any
+      try {
+        // Limpar possível markdown do resultado
+        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+        parsedResult = JSON.parse(cleanContent)
+      } catch (parseError) {
+        throw new Error(`Erro ao fazer parse do JSON: ${parseError instanceof Error ? parseError.message : 'Erro desconhecido'}`)
+      }
+
+      // Processar resultado com extração de CEP inteligente
+      const enderecoData = extractCepFromAddress(parsedResult.cliente?.endereco || '')
+      
+      const result: OCRPedidoResult = {
+        numeroOrdem: parsedResult.numeroOrdem || `OP-${Date.now().toString().slice(-4)}`,
+        cliente: {
+          razaoSocial: parsedResult.cliente?.razaoSocial || 'Cliente Identificado',
+          nomeFantasia: parsedResult.cliente?.nomeFantasia || '',
+          cnpj: parsedResult.cliente?.cnpj || '',
+          endereco: parsedResult.cliente?.endereco || enderecoData.endereco,
+          cep: parsedResult.cliente?.cep || enderecoData.cep,
+          telefone: parsedResult.cliente?.telefone || '',
+          email: parsedResult.cliente?.email || ''
+        },
+        produtos: parsedResult.produtos || [],
+        dataEntrega: parsedResult.dataEntrega || new Date().toISOString().split('T')[0],
+        observacoes: parsedResult.observacoes || 'Documento processado via OCR',
+        confianca: parsedResult.confianca || 0.8
+      }
+
+      onProgress?.('✅ Análise concluída com sucesso!')
+      return result
+
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Erro desconhecido')
+      console.error(`❌ Tentativa ${attempt} falhou:`, lastError.message)
+      
+      if (attempt < config.maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000 // Exponential backoff
+        onProgress?.(`⏳ Aguardando ${delay/1000}s antes da próxima tentativa...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  // Se chegou aqui, todas as tentativas falharam
+  console.error('❌ Todas as tentativas de OCR falharam')
+  throw lastError || new Error('Falha na análise OCR após múltiplas tentativas')
 }
 
 // 🧪 TESTAR OCR COM IMAGEM
@@ -254,4 +525,4 @@ export const testOCRService = async (): Promise<boolean> => {
   }
 }
 
-export default { analyzeBobonaImage, testOCRService }
+export default { analyzeBobonaImage, analyzePedidoDocument, testOCRService }

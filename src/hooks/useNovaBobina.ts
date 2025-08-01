@@ -11,7 +11,7 @@ import { TIPOS_PAPEL, FORNECEDORES, GRAMATURAS } from '@/types/nova-bobina'
 
 // 🤖 SERVICES REAIS - OCR + SUPABASE
 import { analyzeBobonaImage } from '@/services/ocrService'
-import { createBobina, testBobinaConnection } from '@/services/bobinasService'
+import { upsertBobina, testBobinaConnection } from '@/services/bobinasService'
 import type { NewBobinaData } from '@/services/bobinasService'
 
 export const useNovaBobina = () => {
@@ -257,13 +257,13 @@ export const useNovaBobina = () => {
         peso_atual: formData.pesoAtual || formData.pesoInicial || 151,
         largura: 520, // Valor padrão se não extraído
         diametro: 800, // Valor padrão se não extraído
-        status: formData.status || 'estoque',
+        status: (formData.status || 'estoque').replace('em-maquina', 'em_maquina') as 'estoque' | 'em_maquina' | 'sobra' | 'acabou',
         observacoes: formData.observacoes || 'Dados extraídos via IA - OCR Real',
         data_entrada: formData.dataEntrada || new Date().toISOString().split('T')[0]
       }
       
-      // 🗄️ SALVAR NO SUPABASE
-      const result = await createBobina(bobinaData)
+      // 🗄️ SALVAR NO SUPABASE (USANDO UPSERT PARA EVITAR DUPLICAÇÃO)
+      const result = await upsertBobina(bobinaData)
       
       if (result.error) {
         throw new Error(result.error)

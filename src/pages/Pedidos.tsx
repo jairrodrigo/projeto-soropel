@@ -49,14 +49,14 @@ export const PedidosPage: React.FC = () => {
 
   const handleSepararTodos = (pedidoId: string) => {
     separarTodosProdutos(pedidoId);
-    showNotification(`✅ Todos os produtos do pedido ${pedidoId} foram separados!`, 'success');
+    showNotification({ message: `✅ Todos os produtos do pedido ${pedidoId} foram separados!`, type: 'success' });
   };
 
   const handleFinalizar = (pedidoId: string) => {
     const confirmed = window.confirm(`Tem certeza que deseja finalizar o pedido ${pedidoId}?`);
     if (confirmed) {
       finalizarPedido(pedidoId);
-      showNotification(`✅ Pedido ${pedidoId} finalizado com sucesso!`, 'success');
+      showNotification({ message: `✅ Pedido ${pedidoId} finalizado com sucesso!`, type: 'success' });
     }
   };
 

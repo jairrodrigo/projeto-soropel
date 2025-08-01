@@ -15,6 +15,7 @@ export interface BobinaFormData {
   fornecedor: string
   pesoInicial: number
   pesoAtual: number
+  condutor?: string
   status: BobinaStatus
   maquinaAtual?: string
   produtoProducao?: string

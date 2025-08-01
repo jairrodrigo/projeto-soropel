@@ -32,6 +32,7 @@ export interface NewBobinaData {
   peso_atual?: number
   largura?: number
   diametro?: number
+  condutor?: string
   status?: 'estoque' | 'em_maquina' | 'sobra' | 'acabou'
   observacoes?: string
   data_entrada?: string
@@ -150,7 +151,66 @@ export const getBobinas = async (
   }
 }
 
-// ➕ CRIAR NOVA BOBINA
+// ➕ CRIAR OU ATUALIZAR BOBINA (UPSERT) - SOLUÇÃO PARA PROBLEMA DE DUPLICAÇÃO
+export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseResult<Bobina>> => {
+  try {
+    console.log('🚀 Upsert bobina - dados recebidos:', bobinaData)
+    console.log('🔍 Código da bobina:', bobinaData.codigo)
+    
+    // 🔍 VERIFICAR SE BOBINA JÁ EXISTE
+    console.log('📋 Verificando se bobina já existe...')
+    const { data: existingBobina, error: searchError } = await supabase
+      .from('bobinas')
+      .select('id, reel_number, status')
+      .eq('reel_number', bobinaData.codigo)
+      .single()
+
+    if (searchError && searchError.code !== 'PGRST116') {
+      console.error('❌ Erro ao buscar bobina existente:', searchError)
+      return { error: `Erro ao verificar bobina: ${searchError.message}` }
+    }
+
+    // 🔄 SE EXISTE, ATUALIZAR STATUS
+    if (existingBobina) {
+      console.log(`✅ Bobina encontrada! ID: ${existingBobina.id}, Status atual: ${existingBobina.status}`)
+      console.log(`🔄 Atualizando status para: ${bobinaData.status}`)
+      
+      const updateData: any = {
+        status: bobinaData.status || 'estoque',
+        current_weight: bobinaData.peso_atual || bobinaData.peso_inicial,
+      }
+      
+      // Se for mudança para sobra, atualizar observações
+      if (bobinaData.status === 'sobra') {
+        updateData.observacoes = `Atualizado para sobra em ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`
+      }
+
+      const { data: updatedBobina, error: updateError } = await supabase
+        .from('bobinas')
+        .update(updateData)
+        .eq('id', existingBobina.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('❌ Erro ao atualizar bobina:', updateError)
+        return { error: updateError.message }
+      }
+
+      console.log('✅ Bobina atualizada com sucesso!')
+      return { data: updatedBobina }
+    }
+
+    // ➕ SE NÃO EXISTE, CRIAR NOVA
+    console.log('➕ Bobina não existe, criando nova...')
+    return await createBobina(bobinaData)
+  } catch (error) {
+    console.error('❌ Erro inesperado no upsert bobina:', error)
+    return { error: 'Erro de conexão' }
+  }
+}
+
+// ➕ CRIAR NOVA BOBINA (função original mantida para casos específicos)
 export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseResult<Bobina>> => {
   try {
     console.log('🚀 Criando nova bobina - dados recebidos:', bobinaData)
@@ -229,11 +289,15 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
     let paper_type_id: string
     
     console.log('📋 Buscando tipo de papel existente...')
-    const { data: existingPaperType, error: searchPaperTypeError } = await supabase
+    console.log('🔍 Valor de busca:', bobinaData.paper_type_name)
+    // Buscar tanto por nome quanto por código (caso OCR retorne código em vez de nome)
+    const { data: existingPaperTypes, error: searchPaperTypeError } = await supabase
       .from('paper_types')
       .select('id')
-      .eq('name', bobinaData.paper_type_name)
-      .single()
+      .or(`name.eq.${bobinaData.paper_type_name},code.eq.${bobinaData.paper_type_name}`)
+      
+    let existingPaperType = existingPaperTypes?.[0] || null
+    console.log('📊 Resultados da busca:', existingPaperTypes?.length || 0, 'tipos encontrados')
 
     if (searchPaperTypeError && searchPaperTypeError.code !== 'PGRST116') {
       console.error('❌ Erro ao buscar tipo de papel:', searchPaperTypeError)
@@ -277,11 +341,12 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         // Se erro por duplicata, tentar buscar o tipo existente
         if (paperTypeError.code === '23505') {
           console.log('🔄 Tentando buscar tipo de papel duplicado...')
-          const { data: duplicatePaperType } = await supabase
+          const { data: duplicatePaperTypes } = await supabase
             .from('paper_types')
             .select('id')
-            .ilike('name', bobinaData.paper_type_name)
-            .single()
+            .or(`name.ilike.%${bobinaData.paper_type_name}%,code.ilike.%${bobinaData.paper_type_name}%`)
+          
+          const duplicatePaperType = duplicatePaperTypes?.[0] || null
           
           if (duplicatePaperType) {
             console.log('✅ Tipo de papel encontrado após duplicata:', duplicatePaperType.id)
@@ -305,17 +370,18 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
     const { data, error } = await supabase
       .from('bobinas')
       .insert([{
-        codigo: bobinaData.codigo,
-        supplier_id,
-        paper_type_id,
+        reel_number: bobinaData.codigo,  // Campo correto da tabela
+        supplier: bobinaData.supplier_name,
+        paper_type: bobinaData.paper_type_name,
         gramatura: bobinaData.gramatura,
-        peso_inicial: bobinaData.peso_inicial,
-        peso_atual: bobinaData.peso_atual || bobinaData.peso_inicial,
-        largura: bobinaData.largura,
-        diametro: bobinaData.diametro,
+        initial_weight: bobinaData.peso_inicial,
+        current_weight: bobinaData.peso_atual || bobinaData.peso_inicial,
+        weight_kg: bobinaData.peso_inicial,
+        width: bobinaData.largura,
+        diameter: bobinaData.diametro,
+        condutor: bobinaData.condutor,  // Novo campo
         status: bobinaData.status || 'estoque',
-        observacoes: bobinaData.observacoes,
-        data_entrada: bobinaData.data_entrada || new Date().toISOString().split('T')[0]
+        received_date: bobinaData.data_entrada || new Date().toISOString().split('T')[0]
       }])
       .select()
       .single()
