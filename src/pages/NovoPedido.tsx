@@ -47,6 +47,7 @@ export const NovoPedidoPage: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           <CameraSection
             cameraState={cameraState}
+            isProcessing={formState.isProcessing}
             videoRef={videoRef}
             canvasRef={canvasRef}
             onActivateCamera={activateCamera}

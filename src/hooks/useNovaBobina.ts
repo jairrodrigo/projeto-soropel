@@ -64,19 +64,7 @@ export const useNovaBobina = () => {
 
   const updateStatus = useCallback((status: BobinaStatus) => {
     updateFormData({ status })
-    
-    const statusMessages = {
-      estoque: '📦 Status: ESTOQUE selecionado',
-      'em-maquina': '⚙️ Status: EM MÁQUINA selecionado', 
-      sobra: '📏 Status: SOBRA selecionado',
-      acabou: '✅ Status: ACABOU selecionado'
-    }
-    
-    showNotification({
-      message: statusMessages[status],
-      type: 'info'
-    })
-  }, [updateFormData, showNotification])
+  }, [updateFormData])
 
   // Funções de câmera
   const activateCamera = useCallback(async () => {
@@ -91,11 +79,6 @@ export const useNovaBobina = () => {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
       }
-      
-      showNotification({
-        message: '📹 Câmera ativada com sucesso',
-        type: 'success'
-      })
       
     } catch (error) {
       console.error('Erro ao ativar câmera:', error)
@@ -131,11 +114,6 @@ export const useNovaBobina = () => {
         await processImage(blob)
       }
     }, 'image/jpeg', 0.8)
-    
-    showNotification({
-      message: '📸 Imagem capturada! Iniciando processamento OCR...',
-      type: 'success'
-    })
   }, [])
 
   // 🤖 PROCESSAMENTO REAL VIA OCR + OPENAI VISION API
@@ -146,12 +124,7 @@ export const useNovaBobina = () => {
       console.log('🤖 Iniciando análise OCR real da bobina...')
       
       // 🧠 ANÁLISE REAL VIA OPENAI VISION API
-      const ocrResult = await analyzeBobonaImage(imageBlob, (step) => {
-        showNotification({
-          message: step,
-          type: 'info'
-        })
-      })
+      const ocrResult = await analyzeBobonaImage(imageBlob)
       
       console.log('✅ OCR concluído:', ocrResult)
       
@@ -184,10 +157,6 @@ export const useNovaBobina = () => {
         currentStep: 3
       }))
       
-      showNotification({
-        message: `✅ OCR concluído! Confiança: ${Math.round((ocrResult.confianca || 0.85) * 100)}%`,
-        type: 'success'
-      })
       
     } catch (error) {
       console.error('❌ Erro no processamento OCR:', error)
@@ -270,11 +239,6 @@ export const useNovaBobina = () => {
       }
       
       console.log('✅ Bobina salva com sucesso no Supabase:', result.data?.id)
-      
-      showNotification({
-        message: `✅ Bobina salva com sucesso! ID: ${result.data?.id || formData.codigoBobina}`,
-        type: 'success'
-      })
       
       return true
       

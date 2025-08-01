@@ -75,7 +75,6 @@ export const useNovoPedido = () => {
           isReady: true,
           hasImage: false
         });
-        showNotification({ message: '📷 Câmera ativada com sucesso!', type: 'success' });
       }
     } catch (error) {
       console.error('Erro ao ativar câmera:', error);
@@ -137,9 +136,7 @@ export const useNovoPedido = () => {
       console.log('🤖 Iniciando análise OCR real do documento...');
       
       // 🧠 ANÁLISE REAL VIA OPENAI VISION API
-      const ocrResult = await analyzePedidoDocument(imageBlob, (step) => {
-        showNotification({ message: step, type: 'info' });
-      });
+      const ocrResult = await analyzePedidoDocument(imageBlob);
       
       console.log('✅ OCR de pedido concluído:', ocrResult);
       
@@ -179,8 +176,6 @@ export const useNovoPedido = () => {
           maquinaSugerida: sugerirMaquina(produto.nome)
         }))
       }));
-
-      showNotification({ message: '✅ Ordem de produção processada com IA real!', type: 'success' });
       
     } catch (error) {
       console.error('❌ Erro no OCR real:', error);
@@ -293,7 +288,6 @@ export const useNovoPedido = () => {
       
       if (result.data) {
         console.log('✅ Pedido salvo com sucesso:', result.data);
-        showNotification({ message: `✅ Pedido ${formData.numeroOrdem} salvo no Supabase!`, type: 'success' });
         
         // Reset do formulário
         setFormData({

@@ -69,6 +69,7 @@ export const NovaBobinaPage: React.FC = () => {
         {/* Camera Section */}
         <CameraSection
           cameraState={cameraState}
+          isProcessing={formState.isProcessing}
           videoRef={videoRef}
           canvasRef={canvasRef}
           onActivateCamera={activateCamera}

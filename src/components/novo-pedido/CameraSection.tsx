@@ -1,10 +1,11 @@
 import React from 'react';
-import { Camera, Upload, Check, FileText } from 'lucide-react';
+import { Camera, Upload, Check, FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/utils';
 import type { CameraState } from '@/types/novo-pedido';
 
 interface CameraSectionProps {
   cameraState: CameraState;
+  isProcessing?: boolean;
   videoRef: React.RefObject<HTMLVideoElement>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   onActivateCamera: () => void;
@@ -14,6 +15,7 @@ interface CameraSectionProps {
 
 export const CameraSection: React.FC<CameraSectionProps> = ({
   cameraState,
+  isProcessing = false,
   videoRef,
   canvasRef,
   onActivateCamera,
@@ -61,6 +63,17 @@ export const CameraSection: React.FC<CameraSectionProps> = ({
                   Formato A4 - certifique-se de que o documento está bem iluminado
                 </div>
               </div>
+              
+              {/* OCR Processing Overlay */}
+              {isProcessing && (
+                <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+                  <div className="text-center text-white">
+                    <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" />
+                    <p className="text-lg font-semibold">Analisando Documento...</p>
+                    <p className="text-sm opacity-80">IA processando ordem de produção</p>
+                  </div>
+                </div>
+              )}
             </>
           ) : hasImage ? (
             <div className="w-full h-full bg-green-100 flex items-center justify-center">
