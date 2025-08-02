@@ -77,7 +77,7 @@ export const testSupabaseConnection = async () => {
       return { success: false, error: error.message }
     }
     
-    console.log('✅ Supabase conectado com sucesso!')
+    // ✅ Log removido para console limpo
     return { success: true, data }
   } catch (err) {
     console.error('❌ Erro inesperado:', err)
@@ -99,14 +99,6 @@ export const createSupabaseUnavailableError = () => {
   }
 }
 
-// 📝 Log de inicialização
-if (config.debug) {
-  console.log('🚀 Supabase Client inicializado:', {
-    url: supabaseUrl ? `${supabaseUrl.slice(0, 30)}...` : 'NOT_SET',
-    keyLength: supabaseAnonKey ? supabaseAnonKey.length : 0,
-    enabled: isSupabaseEnabled,
-    config: config.features
-  })
-}
+// ✅ Log de inicialização removido para console limpo
 
 export default supabase

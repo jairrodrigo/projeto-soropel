@@ -76,7 +76,7 @@ const createSupabaseUnavailableError = () => {
 // 📝 FUNÇÃO: CRIAR PEDIDO COMPLETO
 export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResult<Order>> => {
   try {
-    console.log('🔄 Criando pedido:', orderData.order_number)
+    // ✅ Log removido para console limpo
     
     if (!isSupabaseAvailable()) {
       throw createSupabaseUnavailableError()
@@ -105,7 +105,7 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
       }
     }
 
-    console.log('✅ Pedido criado:', orderResult.id)
+    // ✅ Log removido para console limpo
 
     // 2. Criar os itens do pedido
     if (orderData.produtos && orderData.produtos.length > 0) {
@@ -174,7 +174,7 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
           }
         }
 
-        console.log(`✅ ${orderItems.length} itens criados para o pedido`)
+        // ✅ Log removido para console limpo
       }
     }
 
@@ -407,4 +407,4 @@ export const getOrdersStats = async (): Promise<DatabaseResult<{
   }
 }
 
-console.log('📋 Orders Service carregado com sucesso!')
+// ✅ Service carregado - log removido para console limpo

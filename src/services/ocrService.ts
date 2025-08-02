@@ -206,7 +206,7 @@ export const analyzeBobonaImage = async (
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY
   
   // 🔍 DEBUG - Adicionar logs para identificar problema
-  console.log('🔍 Debug OCR Service:')
+  // ✅ Log removido para console limpo
   console.log('- VITE_OPENAI_API_KEY existe:', !!openaiKey)
   console.log('- Tamanho da key:', openaiKey?.length || 0)
   console.log('- Primeiros 10 chars:', openaiKey?.substring(0, 10) || 'N/A')
@@ -282,9 +282,9 @@ export const analyzeBobonaImage = async (
         result.confianca = 0.8 // Default se não especificado
       }
       
-      onProgress?.('🎯 Análise concluída!')
+      // ✅ Análise concluída - feedback visual já disponível no componente
       
-      console.log('✅ OCR Real - Dados extraídos:', result)
+      // ✅ OCR dados extraídos - log removido para console limpo
       return result
       
     } catch (error) {
@@ -355,7 +355,7 @@ export const analyzePedidoDocument = async (
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY
   
   if (!openaiKey) {
-    console.log('🔄 OpenAI API Key não encontrada, usando simulação inteligente...')
+    // ✅ Log removido para console limpo
     onProgress?.('📝 OpenAI não configurada - usando simulação baseada em documentos reais')
     
     // Simulação inteligente baseada em documentos reais Soropel
@@ -478,7 +478,7 @@ export const analyzePedidoDocument = async (
         confianca: parsedResult.confianca || 0.8
       }
 
-      onProgress?.('✅ Análise concluída com sucesso!')
+      // ✅ Análise concluída - feedback visual já disponível no componente
       return result
 
     } catch (error) {
@@ -513,10 +513,10 @@ export const testOCRService = async (): Promise<boolean> => {
     })
     
     const result = await analyzeBobonaImage(blob, (step) => {
-      console.log(`🔄 ${step}`)
+      // ✅ Log removido para console limpo
     })
     
-    console.log('✅ OCR Service funcionando:', result)
+    // ✅ Log removido para console limpo
     return true
     
   } catch (error) {

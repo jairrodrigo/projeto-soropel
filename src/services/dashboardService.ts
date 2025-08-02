@@ -333,7 +333,7 @@ export const testDashboardConnection = async () => {
       .select('count')
       .limit(1)
     
-    console.log('✅ Dashboard conectado ao Supabase!')
+    // ✅ Conexão OK - log removido para console limpo
     return { success: true, count }
   } catch (error) {
     console.error('❌ Erro na conexão dashboard:', error)

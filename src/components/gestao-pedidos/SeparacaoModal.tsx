@@ -51,7 +51,7 @@ export const SeparacaoModal: React.FC<SeparacaoModalProps> = ({
     
     onConfirm(qtd);
     onClose();
-    showNotification({ message: `✅ ${qtd.toFixed(3)} MIL de ${produto?.nome} separado com sucesso!`, type: 'success' });
+    // ✅ Produto separado - feedback visual já disponível no modal
   };
 
   const setQuantidadePreset = (valor: number) => {

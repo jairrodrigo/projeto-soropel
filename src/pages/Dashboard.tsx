@@ -33,16 +33,13 @@ export const DashboardPage: React.FC = () => {
   // 🔄 Carregar dados reais ao montar componente
   useEffect(() => {
     const loadDashboardData = async () => {
-      console.log('🚀 Carregando dashboard com dados reais...')
+      // ✅ Dashboard carregando - log removido para console limpo
       
       // Testar conexão primeiro
       const connected = await testConnection()
       if (connected) {
         await refreshData()
-        showNotification({ 
-          message: '✅ Dashboard conectado ao Supabase!', 
-          type: 'success' 
-        })
+        // ✅ Dashboard conectado - feedback visual já disponível na interface
       } else {
         showNotification({ 
           message: '⚠️ Problema na conexão com banco de dados', 
@@ -78,7 +75,9 @@ export const DashboardPage: React.FC = () => {
       description: 'Diário',
       icon: BarChart,
       color: 'bg-purple-600 hover:bg-purple-700',
-      action: () => showNotification({ message: '📊 Gerando relatório...', type: 'info' })
+      action: () => {
+        // 📊 Gerando relatório - feedback visual substitui notificação
+      }
     },
     {
       id: 'manutencao',

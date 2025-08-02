@@ -114,7 +114,7 @@ export const useDashboardStore = create<DashboardState>()(
           set({ isLoading: true })
           
           try {
-            console.log('🔄 Atualizando dados do dashboard...')
+            // ✅ Atualizando dados - logs removidos para console limpo
             
             // Buscar todos os dados reais do Supabase
             const dashboardData = await refreshDashboardData()
@@ -131,18 +131,7 @@ export const useDashboardStore = create<DashboardState>()(
               isLoading: false
             })
             
-            console.log('✅ Dashboard atualizado com dados reais!')
-            
-            // Log dos dados carregados
-            if (dashboardData.metrics) {
-              console.log('📊 Métricas carregadas:', dashboardData.metrics)
-            }
-            if (dashboardData.machines) {
-              console.log('🤖 Máquinas carregadas:', dashboardData.machines.length)
-            }
-            if (dashboardData.alerts) {
-              console.log('🚨 Alertas carregados:', dashboardData.alerts.length)
-            }
+            // ✅ Dashboard atualizado - logs de debug removidos para console limpo
             
           } catch (error) {
             console.error('❌ Erro ao atualizar dashboard:', error)

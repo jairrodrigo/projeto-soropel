@@ -154,11 +154,11 @@ export const getBobinas = async (
 // ➕ CRIAR OU ATUALIZAR BOBINA (UPSERT) - SOLUÇÃO PARA PROBLEMA DE DUPLICAÇÃO
 export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseResult<Bobina>> => {
   try {
-    console.log('🚀 Upsert bobina - dados recebidos:', bobinaData)
-    console.log('🔍 Código da bobina:', bobinaData.codigo)
+    // ✅ Log removido para console limpo
+    // ✅ Log removido para console limpo
     
     // 🔍 VERIFICAR SE BOBINA JÁ EXISTE
-    console.log('📋 Verificando se bobina já existe...')
+    // ✅ Log removido para console limpo
     const { data: existingBobina, error: searchError } = await supabase
       .from('bobinas')
       .select('id, reel_number, status')
@@ -172,8 +172,8 @@ export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
 
     // 🔄 SE EXISTE, ATUALIZAR STATUS
     if (existingBobina) {
-      console.log(`✅ Bobina encontrada! ID: ${existingBobina.id}, Status atual: ${existingBobina.status}`)
-      console.log(`🔄 Atualizando status para: ${bobinaData.status}`)
+      // ✅ Log removido para console limpo
+      // ✅ Log removido para console limpo
       
       const updateData: any = {
         status: bobinaData.status || 'estoque',
@@ -197,7 +197,7 @@ export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         return { error: updateError.message }
       }
 
-      console.log('✅ Bobina atualizada com sucesso!')
+      // ✅ Log removido para console limpo
       return { data: updatedBobina }
     }
 
@@ -213,14 +213,14 @@ export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
 // ➕ CRIAR NOVA BOBINA (função original mantida para casos específicos)
 export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseResult<Bobina>> => {
   try {
-    console.log('🚀 Criando nova bobina - dados recebidos:', bobinaData)
-    console.log('🔍 Fornecedor para processar:', bobinaData.supplier_name)
-    console.log('🔍 Tipo de papel para processar:', bobinaData.paper_type_name)
+    // ✅ Log removido para console limpo
+    // ✅ Log removido para console limpo
+    // ✅ Log removido para console limpo
 
     // 🔍 Buscar ou criar fornecedor
     let supplier_id: string
     
-    console.log('📋 Buscando fornecedor existente...')
+    // ✅ Log removido para console limpo
     const { data: existingSupplier, error: searchSupplierError } = await supabase
       .from('suppliers')
       .select('id')
@@ -234,7 +234,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
 
     if (existingSupplier) {
       supplier_id = existingSupplier.id
-      console.log('✅ Fornecedor encontrado com ID:', supplier_id)
+      // ✅ Log removido para console limpo
     } else {
       // Criar novo fornecedor (usando campos corretos)
       console.log('➕ Criando novo fornecedor:', bobinaData.supplier_name)
@@ -260,7 +260,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         
         // Se erro por duplicata, tentar buscar o fornecedor existente
         if (supplierError.code === '23505') {
-          console.log('🔄 Tentando buscar fornecedor duplicado...')
+          // ✅ Log removido para console limpo
           const { data: duplicateSupplier } = await supabase
             .from('suppliers')
             .select('id')
@@ -268,7 +268,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
             .single()
           
           if (duplicateSupplier) {
-            console.log('✅ Fornecedor encontrado após duplicata:', duplicateSupplier.id)
+            // ✅ Log removido para console limpo
             supplier_id = duplicateSupplier.id
           } else {
             return { error: `Erro ao processar fornecedor: ${supplierError.message}` }
@@ -281,15 +281,15 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         return { error: 'Erro ao processar fornecedor - dados não retornados' }
       } else {
         supplier_id = newSupplier.id
-        console.log('✅ Fornecedor criado com ID:', supplier_id)
+        // ✅ Log removido para console limpo
       }
     }
 
     // 🔍 Buscar ou criar tipo de papel
     let paper_type_id: string
     
-    console.log('📋 Buscando tipo de papel existente...')
-    console.log('🔍 Valor de busca:', bobinaData.paper_type_name)
+    // ✅ Log removido para console limpo
+    // ✅ Log removido para console limpo
     // Buscar tanto por nome quanto por código (caso OCR retorne código em vez de nome)
     const { data: existingPaperTypes, error: searchPaperTypeError } = await supabase
       .from('paper_types')
@@ -297,7 +297,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
       .or(`name.eq.${bobinaData.paper_type_name},code.eq.${bobinaData.paper_type_name}`)
       
     let existingPaperType = existingPaperTypes?.[0] || null
-    console.log('📊 Resultados da busca:', existingPaperTypes?.length || 0, 'tipos encontrados')
+    // ✅ Log removido para console limpo
 
     if (searchPaperTypeError && searchPaperTypeError.code !== 'PGRST116') {
       console.error('❌ Erro ao buscar tipo de papel:', searchPaperTypeError)
@@ -306,7 +306,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
 
     if (existingPaperType) {
       paper_type_id = existingPaperType.id
-      console.log('✅ Tipo de papel encontrado com ID:', paper_type_id)
+      // ✅ Log removido para console limpo
     } else {
       // Criar novo tipo de papel (usando campos corretos)
       console.log('➕ Criando novo tipo de papel:', bobinaData.paper_type_name)
@@ -340,7 +340,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         
         // Se erro por duplicata, tentar buscar o tipo existente
         if (paperTypeError.code === '23505') {
-          console.log('🔄 Tentando buscar tipo de papel duplicado...')
+          // ✅ Log removido para console limpo
           const { data: duplicatePaperTypes } = await supabase
             .from('paper_types')
             .select('id')
@@ -349,7 +349,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
           const duplicatePaperType = duplicatePaperTypes?.[0] || null
           
           if (duplicatePaperType) {
-            console.log('✅ Tipo de papel encontrado após duplicata:', duplicatePaperType.id)
+            // ✅ Log removido para console limpo
             paper_type_id = duplicatePaperType.id
           } else {
             return { error: `Erro ao processar tipo de papel: ${paperTypeError.message}` }
@@ -362,7 +362,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         return { error: 'Erro ao processar tipo de papel - dados não retornados' }
       } else {
         paper_type_id = newPaperType.id
-        console.log('✅ Tipo de papel criado com ID:', paper_type_id)
+        // ✅ Log removido para console limpo
       }
     }
 
@@ -391,7 +391,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
       return { error: error.message }
     }
 
-    console.log('✅ Bobina criada com sucesso:', data.id)
+    // ✅ Log removido para console limpo
     return { data }
   } catch (error) {
     console.error('❌ Erro inesperado ao criar bobina:', error)
@@ -562,7 +562,7 @@ export const testBobinaConnection = async (): Promise<boolean> => {
       .select('count')
       .limit(1)
     
-    console.log('✅ Bobinas Service conectado ao Supabase!')
+    // ✅ Log removido para console limpo
     return true
   } catch (error) {
     console.error('❌ Erro na conexão Bobinas Service:', error)

@@ -41,15 +41,9 @@ export const Sidebar: React.FC<{
   const handleMenuItemClick = (item: MenuItem) => {
     if (onPageChange && (item.id === 'dashboard' || item.id === 'nova-bobina' || item.id === 'novo-pedido' || item.id === 'pedidos')) {
       onPageChange(item.id)
-      showNotification({
-        message: `📱 Navegando para ${item.label}...`,
-        type: 'info'
-      })
+      // ✅ Navegação - feedback visual já disponível na mudança de página
     } else {
-      showNotification({
-        message: `📱 ${item.label} em desenvolvimento...`,
-        type: 'info'
-      })
+      // ✅ Em desenvolvimento - feedback pode ser visual na própria interface
     }
   }
 

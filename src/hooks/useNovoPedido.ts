@@ -138,7 +138,7 @@ export const useNovoPedido = () => {
       // 🧠 ANÁLISE REAL VIA OPENAI VISION API
       const ocrResult = await analyzePedidoDocument(imageBlob);
       
-      console.log('✅ OCR de pedido concluído:', ocrResult);
+      // ✅ Log removido para console limpo;
       
       // Converter resultado OCR para formato do frontend
       const processedPedidoData: ProcessedPedidoData = {
@@ -250,7 +250,7 @@ export const useNovoPedido = () => {
     try {
       setFormState(prev => ({ ...prev, isProcessing: true }));
       
-      console.log('🚀 Salvando pedido no Supabase...', formData.numeroOrdem);
+      // ✅ Log removido para console limpo;
       
       // Preparar dados para o service
       const orderData: NewOrderData = {
@@ -287,7 +287,7 @@ export const useNovoPedido = () => {
       }
       
       if (result.data) {
-        console.log('✅ Pedido salvo com sucesso:', result.data);
+        // ✅ Pedido salvo - log removido para console limpo
         
         // Reset do formulário
         setFormData({

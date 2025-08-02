@@ -126,7 +126,7 @@ export const useNovaBobina = () => {
       // 🧠 ANÁLISE REAL VIA OPENAI VISION API
       const ocrResult = await analyzeBobonaImage(imageBlob)
       
-      console.log('✅ OCR concluído:', ocrResult)
+      // ✅ Log removido para console limpo
       
       // Converter resultado OCR para formato do frontend
       const processedBobinaData: ProcessedBobinaData = {
@@ -238,7 +238,7 @@ export const useNovaBobina = () => {
         throw new Error(result.error)
       }
       
-      console.log('✅ Bobina salva com sucesso no Supabase:', result.data?.id)
+      // ✅ Bobina salva - log removido para console limpo
       
       return true
       
@@ -289,10 +289,7 @@ export const useNovaBobina = () => {
       videoRef.current.srcObject = null
     }
     
-    showNotification({
-      message: '🔄 Formulário limpo com sucesso',
-      type: 'info'
-    })
+    // ✅ Formulário limpo - feedback visual já disponível no componente
   }, [showNotification])
 
   // Função para retornar sobra ao estoque
@@ -312,10 +309,7 @@ export const useNovaBobina = () => {
       observacoes: `Bobina retornada ao estoque como sobra aproveitável. Peso original: ${pesoSobra}kg. Data de retorno: ${new Date().toLocaleDateString('pt-BR')}.`
     })
     
-    showNotification({
-      message: `✅ Sobra de ${pesoSobra}kg retornada ao estoque com sucesso!`,
-      type: 'success'
-    })
+    // ✅ Sobra retornada - feedback visual já disponível no StatusControl
   }, [formData.codigoBobina, updateFormData, showNotification])
 
   return {
