@@ -39,7 +39,7 @@ export const Sidebar: React.FC<{
   const { sidebarCollapsed, toggleSidebar, showNotification } = useUIStore()
 
   const handleMenuItemClick = (item: MenuItem) => {
-    if (onPageChange && (item.id === 'dashboard' || item.id === 'nova-bobina' || item.id === 'novo-pedido' || item.id === 'pedidos')) {
+    if (onPageChange && (item.id === 'dashboard' || item.id === 'nova-bobina' || item.id === 'novo-pedido' || item.id === 'pedidos' || item.id === 'maquinas')) {
       onPageChange(item.id)
       // ✅ Navegação - feedback visual já disponível na mudança de página
     } else {
