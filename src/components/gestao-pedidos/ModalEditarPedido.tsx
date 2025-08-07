@@ -8,7 +8,6 @@ import type { Product } from '@/types/supabase'
 interface EditablePedido {
   customer_name: string
   priority: 'normal' | 'especial' | 'urgente'
-  tipo: 'timbrado' | 'neutro'
   delivery_date: string
   notes: string
   status: ordersService.Order['status']
@@ -42,7 +41,6 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
   const [formData, setFormData] = useState<EditablePedido>({
     customer_name: '',
     priority: 'normal',
-    tipo: 'neutro',
     delivery_date: '',
     notes: '',
     status: 'aguardando_producao'
@@ -66,7 +64,6 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
       setFormData({
         customer_name: pedido.cliente,
         priority: convertPriorityToService(pedido.prioridade),
-        tipo: pedido.tipo === 'timbrado' ? 'timbrado' : 'neutro',
         delivery_date: pedido.dataEntrega,
         notes: pedido.observacoes || '',
         status: convertStatusToService(pedido.status)
@@ -189,7 +186,6 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
       const updateResult = await ordersService.updateOrder(pedido.id, {
         customer_name: formData.customer_name,
         priority: formData.priority,
-        tipo: formData.tipo,
         delivery_date: formData.delivery_date,
         notes: formData.notes,
         status: formData.status
@@ -302,20 +298,6 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
                     <option value="normal">Normal</option>
                     <option value="especial">Especial</option>
                     <option value="urgente">Urgente</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo
-                  </label>
-                  <select
-                    value={formData.tipo}
-                    onChange={(e) => handleInputChange('tipo', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="neutro">Neutro</option>
-                    <option value="timbrado">Timbrado</option>
                   </select>
                 </div>
 
