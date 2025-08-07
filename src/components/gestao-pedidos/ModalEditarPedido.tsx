@@ -78,55 +78,64 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
       }))
       setProductItems(items)
 
-      loadAvailableProducts() // Carrega lista inicial vazia
+      loadAvailableProducts() // Carrega todos os produtos
     }
   }, [isOpen, pedido])
 
-  // Carregar produtos disponíveis com filtro de busca
-  const loadAvailableProducts = async (searchFilter?: string) => {
+  // Carregar produtos disponíveis (todos os produtos, depois filtrar client-side)
+  const loadAvailableProducts = async () => {
     setLoading(true)
     setError(null)
     try {
-      console.log('🔍 LOADING PRODUCTS - Start with search:', searchFilter)
+      console.log('🔍 LOADING ALL PRODUCTS - Start')
       
-      // Usar filtro de busca do productsService se tiver termo de busca
-      const filters = searchFilter?.trim() ? { search: searchFilter.trim() } : undefined
-      const result = await productsService.getProducts(filters, 1, 50) // Buscar 50 produtos
+      // Carregar TODOS os produtos ativos (igual ao modal de configurar produtos)
+      const result = await productsService.getProducts(
+        { active: true }, // Apenas produtos ativos
+        1, 
+        300 // Carregar todos os produtos
+      )
       
-      console.log('🔍 LOADING PRODUCTS - Result:', result)
+      console.log('🔍 LOADING ALL PRODUCTS - Result:', result)
       
       if (result.success && result.data && result.data.items) {
         const products = Array.isArray(result.data.items) ? result.data.items : []
-        console.log('🔍 LOADING PRODUCTS - Products found:', products.length)
+        console.log('🔍 LOADING ALL PRODUCTS - Products found:', products.length)
         
-        setFilteredProducts(products) // Já vem filtrado do servidor
+        setAvailableProducts(products) // Guardar todos os produtos
+        setFilteredProducts(products) // Inicialmente mostrar todos
       } else {
         console.warn('⚠️ No products data:', result)
+        setAvailableProducts([])
         setFilteredProducts([])
       }
     } catch (error) {
       console.error('❌ Error loading products:', error)
       setError('Erro ao carregar produtos')
+      setAvailableProducts([])
       setFilteredProducts([])
     } finally {
       setLoading(false)
     }
   }
 
-  // Buscar produtos conforme o usuário digita
+  // Filtrar produtos conforme o usuário digita (client-side igual ao modal de configurar)
   useEffect(() => {
-    if (searchTerm.trim().length >= 2) {
-      // Buscar no servidor quando tiver pelo menos 2 caracteres
-      const timeoutId = setTimeout(() => {
-        loadAvailableProducts(searchTerm)
-      }, 300) // Debounce de 300ms
-      
-      return () => clearTimeout(timeoutId)
-    } else if (searchTerm.trim().length === 0) {
-      // Limpar resultados quando não há busca
-      setFilteredProducts([])
+    if (!searchTerm.trim()) {
+      setFilteredProducts(availableProducts) // Mostrar todos se não há busca
+      return
     }
-  }, [searchTerm])
+    
+    // Filtro client-side igual ao modal de configurar produtos
+    const filtered = availableProducts.filter(product => 
+      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.soropel_code?.toString().includes(searchTerm) ||
+      product.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${product.weight_value}${product.weight_unit}`.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    
+    setFilteredProducts(filtered)
+  }, [searchTerm, availableProducts])
 
   // Conversores de tipos
   const convertPriorityToService = (priority: string): 'normal' | 'especial' | 'urgente' => {
@@ -347,7 +356,7 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
                   <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Digite pelo menos 2 caracteres para buscar produtos..."
+                    placeholder="Buscar produtos por nome, código ou peso..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -359,44 +368,41 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
                   )}
                 </div>
 
-                {/* Instrução de busca */}
-                {searchTerm.length > 0 && searchTerm.length < 2 && (
-                  <div className="mt-2 p-3 bg-blue-50 text-blue-700 text-sm rounded-lg">
-                    Digite pelo menos 2 caracteres para buscar produtos
-                  </div>
-                )}
-
                 {/* Lista de produtos disponíveis */}
-                {searchTerm.length >= 2 && (
-                  <div className="mt-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg bg-white">
-                    {loading ? (
-                      <div className="p-4 text-center text-gray-500">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                        Buscando produtos no banco...
-                      </div>
-                    ) : filteredProducts.length > 0 ? (
-                      <>
+                <div className="mt-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                  {loading ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                      Carregando produtos...
+                    </div>
+                  ) : filteredProducts.length > 0 ? (
+                    <>
+                      {searchTerm && (
                         <div className="p-2 bg-gray-50 text-xs text-gray-600 border-b">
                           {filteredProducts.length} produto(s) encontrado(s) para "{searchTerm}"
                         </div>
-                        {filteredProducts.map((product) => (
-                          <button
-                            key={product.id}
-                            onClick={() => addProduct(product)}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                          >
-                            <div className="font-medium text-sm">{product.name}</div>
-                            <div className="text-xs text-gray-500">Código: {product.soropel_code}</div>
-                          </button>
-                        ))}
-                      </>
-                    ) : (
-                      <div className="p-4 text-center text-gray-500">
-                        Nenhum produto encontrado para "{searchTerm}"
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                      {filteredProducts.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => addProduct(product)}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                        >
+                          <div className="font-medium text-sm">{product.name}</div>
+                          <div className="text-xs text-gray-500">Código: {product.soropel_code}</div>
+                        </button>
+                      ))}
+                    </>
+                  ) : searchTerm ? (
+                    <div className="p-4 text-center text-gray-500">
+                      Nenhum produto encontrado para "{searchTerm}"
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      Digite para buscar produtos
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Lista de produtos do pedido */}
