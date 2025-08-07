@@ -1,0 +1,42 @@
+// 🧪 Teste direto da conexão Supabase - Products
+// Para debuggar o problema do carregamento de produtos
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'https://dbruylvkqxbyrsnfrdpu.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRicnV5bHZrcXhieXJzbmZyZHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NDQyODQsImV4cCI6MjA2NzAyMDI4NH0.B-N8j8L6wbWHe5e6y3NHDy989F0Et9mAjESSv6REEQY'
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Teste direto da tabela products
+async function testProductsConnection() {
+  console.log('🧪 Testando conexão com tabela products...')
+  
+  try {
+    const { data, error, count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .eq('active', true)
+      .limit(5)
+    
+    if (error) {
+      console.error('❌ Erro ao buscar produtos:', error)
+      return
+    }
+    
+    console.log('✅ Conexão OK!')
+    console.log(`📊 Total de produtos ativos: ${count}`)
+    console.log('📋 Estrutura da tabela (primeiro produto):')
+    
+    if (data && data.length > 0) {
+      console.log('🔍 Campos disponíveis:', Object.keys(data[0]))
+      console.log('📄 Primeiro produto completo:', data[0])
+    }
+    
+  } catch (err) {
+    console.error('❌ Erro de conexão:', err)
+  }
+}
+
+// Executar teste
+testProductsConnection()

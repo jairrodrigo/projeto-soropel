@@ -11,10 +11,18 @@ export const getProducts = async (
   pageSize = 50
 ): Promise<DatabaseResult<PaginatedResponse<Product>>> => {
   
+  // 🧪 DEBUG TEMPORÁRIO
+  console.log('🔍 DEBUG PRODUCTS SERVICE - Iniciando getProducts...')
+  console.log('🔍 DEBUG - isSupabaseAvailable():', isSupabaseAvailable())
+  console.log('🔍 DEBUG - supabase client exists:', !!supabase)
+  
   // 🛡️ Verificar se Supabase está disponível
   if (!isSupabaseAvailable()) {
+    console.log('🔍 DEBUG - Supabase não disponível, retornando erro...')
     return createSupabaseUnavailableError() as DatabaseResult<PaginatedResponse<Product>>
   }
+  
+  console.log('🔍 DEBUG - Supabase disponível, executando query...')
   
   try {
     let query = supabase!
@@ -50,25 +58,31 @@ export const getProducts = async (
       .order('soropel_code', { ascending: true })
       .range(from, to)
 
+    console.log('🔍 DEBUG - Executando query Supabase...')
     const { data, error, count } = await query
+    console.log('🔍 DEBUG - Resultado da query:', { data: !!data, error, count, dataLength: data?.length })
 
     if (error) {
       console.error('❌ Erro ao buscar produtos:', error)
-      return { error }
+      return { success: false, error: error.message }
     }
 
-    return {
+    const result = {
+      success: true,
       data: {
-        data: data || [],
+        items: data || [],
         count: count || 0,
         page,
         pageSize,
         totalPages: Math.ceil((count || 0) / pageSize)
       }
     }
+    
+    console.log('🔍 DEBUG - Retornando resultado:', result)
+    return result
   } catch (error) {
     console.error('❌ Erro inesperado:', error)
-    return { error: 'Erro de conexão' }
+    return { success: false, error: 'Erro de conexão' }
   }
 }
 

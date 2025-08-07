@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Botões Soropel</title>
+</head>
+<body>
+    <h1>🧪 Debug - Sistema Soropel</h1>
+    <p>✅ Se você consegue ver esta página, o servidor está funcionando!</p>
+    <p>🔗 Acesse: <a href="http://localhost:3001" target="_blank">http://localhost:3001</a></p>
+    
+    <h2>Como testar os botões:</h2>
+    <ol>
+        <li>Acesse a página "Gestão de Máquinas" no menu</li>
+        <li>Clique em "Planejar Semana" (deve abrir modal)</li>
+        <li>Clique em "Configurar Produtos" (deve abrir modal)</li>
+        <li>Clique nos botões PAUSAR/INICIAR das máquinas</li>
+        <li>Clique nos botões CONFIG das máquinas</li>
+        <li>Verifique no console do navegador (F12) se aparecem os logs</li>
+    </ol>
+    
+    <h2>Console esperado:</h2>
+    <pre>
+    "Abrindo planejamento semanal..."
+    "Abrindo configuração de produtos..."
+    "Máquina 1 pausada"
+    "Abrindo configuração da Máquina 1"
+    </pre>
+</body>
+</html>
