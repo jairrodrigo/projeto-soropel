@@ -5,7 +5,8 @@ import {
   FiltrosBarra,
   PedidoCard,
   SeparacaoModal,
-  DetalhesModal
+  DetalhesModal,
+  ModalEditarPedido
 } from '@/components/gestao-pedidos';
 
 export const PedidosPage: React.FC = () => {
@@ -15,6 +16,7 @@ export const PedidosPage: React.FC = () => {
     filtros,
     separacaoModal,
     detalhesModal,
+    editarModal,
     isLoading,
     loadPedidos,
     updateFiltros,
@@ -24,6 +26,8 @@ export const PedidosPage: React.FC = () => {
     closeSeparacaoModal,
     openDetalhesModal,
     closeDetalhesModal,
+    openEditarModal,
+    closeEditarModal,
     separarProduto,
     separarTodosProdutos,
     finalizarPedido,
@@ -58,6 +62,16 @@ export const PedidosPage: React.FC = () => {
       finalizarPedido(pedidoId);
       // ✅ Pedido finalizado - feedback visual já disponível na interface
     }
+  };
+
+  const handleEditar = (pedido: Pedido) => {
+    openEditarModal(pedido);
+  };
+
+  const handleSalvarEdicao = () => {
+    // Recarregar pedidos após edição
+    loadPedidos();
+    closeEditarModal();
   };
 
   const getCurrentPedido = () => {
@@ -102,6 +116,7 @@ export const PedidosPage: React.FC = () => {
               onVerDetalhes={openDetalhesModal}
               onSepararTodos={handleSepararTodos}
               onFinalizar={handleFinalizar}
+              onEditar={handleEditar}
             />
           ))
         )}
@@ -120,6 +135,13 @@ export const PedidosPage: React.FC = () => {
         isOpen={detalhesModal.isOpen}
         pedido={detalhesModal.pedido}
         onClose={closeDetalhesModal}
+      />
+
+      <ModalEditarPedido
+        isOpen={editarModal.isOpen}
+        pedido={editarModal.pedido}
+        onClose={closeEditarModal}
+        onSave={handleSalvarEdicao}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PackagePlus, Eye, Package, Check } from 'lucide-react';
+import { PackagePlus, Eye, Package, Check, Edit } from 'lucide-react';
 import { Pedido } from '@/types';
 import { formatDate, isAtrasado, getPriorityText } from '@/services/gestaoPedidosData';
 
@@ -9,6 +9,7 @@ interface PedidoCardProps {
   onVerDetalhes: (pedido: Pedido) => void;
   onSepararTodos: (pedidoId: string) => void;
   onFinalizar: (pedidoId: string) => void;
+  onEditar: (pedido: Pedido) => void;
 }
 
 export const PedidoCard: React.FC<PedidoCardProps> = ({
@@ -17,6 +18,7 @@ export const PedidoCard: React.FC<PedidoCardProps> = ({
   onVerDetalhes,
   onSepararTodos,
   onFinalizar,
+  onEditar,
 }) => {
   const isOrderAtrasado = isAtrasado(pedido.dataEntrega);
   const dataEntregaClass = isOrderAtrasado ? 'text-red-600 font-bold' : 'text-gray-600';
@@ -127,13 +129,27 @@ export const PedidoCard: React.FC<PedidoCardProps> = ({
       {/* Rodapé do Card */}
       <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl">
         <div className="flex flex-col gap-3">
-          <button
-            onClick={() => onVerDetalhes(pedido)}
-            className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 active:bg-gray-800 transition flex items-center justify-center gap-2 font-semibold"
-          >
-            <Eye className="w-4 h-4" />
-            Ver Detalhes
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onVerDetalhes(pedido)}
+              className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 active:bg-gray-800 transition flex items-center justify-center gap-2 font-semibold"
+            >
+              <Eye className="w-4 h-4" />
+              Ver Detalhes
+            </button>
+            <button
+              onClick={() => onEditar(pedido)}
+              disabled={pedido.status === 'finalizado'}
+              className={`w-full px-4 py-3 rounded-lg transition flex items-center justify-center gap-2 font-semibold ${
+                pedido.status === 'finalizado'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800'
+              }`}
+            >
+              <Edit className="w-4 h-4" />
+              Editar
+            </button>
+          </div>
           <button
             onClick={() => onSepararTodos(pedido.id)}
             disabled={pedido.progresso === 100}

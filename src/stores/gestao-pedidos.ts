@@ -1,6 +1,35 @@
 import { create } from 'zustand';
 import { Pedido, MetricasPedidos, FiltrosPedidos, SeparacaoModal, DetalhesModal } from '@/types';
 import { mockPedidos, calculateMetricasPedidos } from '@/services/gestaoPedidosData';
+import * as ordersService from '@/services/ordersService';
+
+// 🔄 Funções de conversão entre tipos Supabase e Store
+const convertSupabaseStatusToStoreStatus = (
+  supabaseStatus: ordersService.Order['status']
+): Pedido['status'] => {
+  switch (supabaseStatus) {
+    case 'aguardando_producao': return 'aguardando';
+    case 'em_producao': return 'producao';
+    case 'em_andamento': return 'producao';
+    case 'produzido': return 'separado';
+    case 'separado_parcial': return 'separado';
+    case 'liberado_completo': return 'finalizado';
+    case 'entrega_completa': return 'finalizado';
+    case 'cancelado': return 'finalizado';
+    default: return 'aguardando';
+  }
+};
+
+const convertSupabasePriorityToStorePriority = (
+  supabasePriority: ordersService.Order['priority']
+): Pedido['prioridade'] => {
+  switch (supabasePriority) {
+    case 'urgente': return 'urgente';
+    case 'especial': return 'alta';
+    case 'normal': return 'media';
+    default: return 'media';
+  }
+};
 
 interface GestaoPedidosState {
   // Data
@@ -13,12 +42,16 @@ interface GestaoPedidosState {
   // Modals
   separacaoModal: SeparacaoModal;
   detalhesModal: DetalhesModal;
+  editarModal: {
+    isOpen: boolean;
+    pedido: Pedido | null;
+  };
   
   // Loading states
   isLoading: boolean;
   
   // Actions
-  loadPedidos: () => void;
+  loadPedidos: () => Promise<void>;
   updateFiltros: (filtros: Partial<FiltrosPedidos>) => void;
   filtrarPedidos: () => Pedido[];
   
@@ -27,6 +60,8 @@ interface GestaoPedidosState {
   closeSeparacaoModal: () => void;
   openDetalhesModal: (pedido: Pedido) => void;
   closeDetalhesModal: () => void;
+  openEditarModal: (pedido: Pedido) => void;
+  closeEditarModal: () => void;
   
   // Pedido actions
   separarProduto: (pedidoId: string, produtoIndex: number, quantidade: number) => void;
@@ -59,19 +94,59 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
     isOpen: false,
     pedido: null,
   },
+  editarModal: {
+    isOpen: false,
+    pedido: null,
+  },
   isLoading: false,
 
   // Actions
-  loadPedidos: () => {
+  loadPedidos: async () => {
     set({ isLoading: true });
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Buscar pedidos reais do Supabase
+      const result = await ordersService.getOrders();
+      
+      if (result.success && result.data) {
+        // Converter dados do Supabase para formato do store
+        const pedidosConvertidos = result.data.map((order): Pedido => ({
+          id: order.order_number || order.id,
+          cliente: order.customer_name || 'Cliente não informado',
+          status: convertSupabaseStatusToStoreStatus(order.status),
+          prioridade: convertSupabasePriorityToStorePriority(order.priority),
+          dataEntrega: order.delivery_date || new Date().toISOString().split('T')[0],
+          quantidadeTotal: order.total_quantity || 0,
+          progresso: 0, // TODO: calcular baseado nos order_items
+          tipo: order.tipo || 'neutro',
+          produtos: [], // TODO: buscar order_items separadamente
+          maquinaSugerida: 'A definir',
+          bobinaDisponivel: 'Verificar estoque',
+          observacoes: order.notes || ''
+        }));
+
+        set({
+          pedidos: pedidosConvertidos,
+          metricas: calculateMetricasPedidos(pedidosConvertidos),
+          isLoading: false,
+        });
+      } else {
+        console.warn('Falha ao carregar pedidos, usando dados simulados:', result.error);
+        // Fallback para dados simulados
+        set({
+          pedidos: mockPedidos,
+          metricas: calculateMetricasPedidos(mockPedidos),
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+      // Fallback para dados simulados
       set({
         pedidos: mockPedidos,
         metricas: calculateMetricasPedidos(mockPedidos),
         isLoading: false,
       });
-    }, 500);
+    }
   },
 
   updateFiltros: (novosFiltros) => {
@@ -137,6 +212,24 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
   closeDetalhesModal: () => {
     set({
       detalhesModal: {
+        isOpen: false,
+        pedido: null,
+      }
+    });
+  },
+
+  openEditarModal: (pedido) => {
+    set({
+      editarModal: {
+        isOpen: true,
+        pedido,
+      }
+    });
+  },
+
+  closeEditarModal: () => {
+    set({
+      editarModal: {
         isOpen: false,
         pedido: null,
       }

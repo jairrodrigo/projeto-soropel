@@ -407,4 +407,168 @@ export const getOrdersStats = async (): Promise<DatabaseResult<{
   }
 }
 
+// 📝 FUNÇÃO: ATUALIZAR PEDIDO COMPLETO
+export const updateOrder = async (
+  orderId: string,
+  updateData: {
+    customer_name?: string
+    priority?: Order['priority']
+    tipo?: Order['tipo']
+    delivery_date?: string
+    notes?: string
+    status?: Order['status']
+  }
+): Promise<DatabaseResult<Order>> => {
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    const { data, error } = await supabase!
+      .from('orders')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select()
+      .single()
+
+    if (error) {
+      return {
+        data: null,
+        error: `Erro ao atualizar pedido: ${error.message}`
+      }
+    }
+
+    return {
+      data,
+      error: null
+    }
+
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
+// 📝 FUNÇÃO: ATUALIZAR ITEM DO PEDIDO
+export const updateOrderItem = async (
+  itemId: string,
+  updateData: {
+    quantity?: number
+    machine_id?: number
+    status?: OrderItem['status']
+  }
+): Promise<DatabaseResult<OrderItem>> => {
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    const { data, error } = await supabase!
+      .from('order_items')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', itemId)
+      .select()
+      .single()
+
+    if (error) {
+      return {
+        data: null,
+        error: `Erro ao atualizar item: ${error.message}`
+      }
+    }
+
+    return {
+      data,
+      error: null
+    }
+
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
+// 📝 FUNÇÃO: DELETAR ITEM DO PEDIDO
+export const deleteOrderItem = async (itemId: string): Promise<DatabaseResult<boolean>> => {
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    const { error } = await supabase!
+      .from('order_items')
+      .delete()
+      .eq('id', itemId)
+
+    if (error) {
+      return {
+        data: false,
+        error: `Erro ao deletar item: ${error.message}`
+      }
+    }
+
+    return {
+      data: true,
+      error: null
+    }
+
+  } catch (error) {
+    return {
+      data: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
+// 📝 FUNÇÃO: ADICIONAR ITEM AO PEDIDO
+export const addOrderItem = async (itemData: {
+  order_id: string
+  product_id: string
+  quantity: number
+  machine_id?: number
+}): Promise<DatabaseResult<OrderItem>> => {
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    const { data, error } = await supabase!
+      .from('order_items')
+      .insert({
+        ...itemData,
+        status: 'pendente'
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return {
+        data: null,
+        error: `Erro ao adicionar item: ${error.message}`
+      }
+    }
+
+    return {
+      data,
+      error: null
+    }
+
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
 // ✅ Service carregado - log removido para console limpo
