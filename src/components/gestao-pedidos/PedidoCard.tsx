@@ -2,7 +2,7 @@ import React from 'react';
 import { PackagePlus, Eye, Package, Check, Edit } from 'lucide-react';
 import { Pedido } from '@/types';
 import { formatDate, isAtrasado, getPriorityText } from '@/services/gestaoPedidosData';
-import { formatQuantity } from '@/utils';
+import { formatQuantityAsPackages } from '@/utils';
 
 interface PedidoCardProps {
   pedido: Pedido;
@@ -58,7 +58,7 @@ export const PedidoCard: React.FC<PedidoCardProps> = ({
             </span>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-gray-900">{formatQuantity(pedido.quantidadeTotal)} Sacos</p>
+            <p className="text-lg font-bold text-gray-900">{formatQuantityAsPackages(pedido.quantidadeTotal)} Pacotes</p>
             <p className={`text-sm ${dataEntregaClass}`}>
               Entrega: {formatDate(pedido.dataEntrega)}
               {isOrderAtrasado && ' ⚠️'}
@@ -94,32 +94,32 @@ export const PedidoCard: React.FC<PedidoCardProps> = ({
                   <div className="flex flex-col gap-1 text-xs">
                     <div>
                       <span className="text-gray-500">Pedido:</span>
-                      <span className="font-semibold ml-2">{formatQuantity(produto.pedido)}</span>
+                      <span className="font-semibold ml-2">{formatQuantityAsPackages(produto.pedido)} pacotes ({produto.pedido.toLocaleString('pt-BR')})</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Separado:</span>
-                      <span className="font-semibold text-blue-600 ml-2">{formatQuantity(produto.separado)}</span>
+                      <span className="font-semibold text-blue-600 ml-2">{formatQuantityAsPackages(produto.separado)} pacotes ({produto.separado.toLocaleString('pt-BR')})</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Pendente:</span>
-                      <span className="font-semibold text-orange-600 ml-2">{formatQuantity(pendente)}</span>
+                      <span className="font-semibold text-orange-600 ml-2">{formatQuantityAsPackages(pendente)} pacotes ({pendente.toLocaleString('pt-BR')})</span>
                     </div>
                   </div>
                 </div>
                 
-                {/* Botão "+ Separar" na parte inferior */}
+                {/* Botão "Gerenciar" na parte inferior */}
                 <button
                   onClick={() => onSeparar(pedido.id, index)}
-                  disabled={isDisabled}
+                  disabled={pendente <= 0 && produto.separado <= 0}
                   className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all ${
-                    isDisabled
+                    pendente <= 0 && produto.separado <= 0
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
                   }`}
-                  title="Separar Produto"
+                  title="Gerenciar Produto (Separar/Retirar)"
                 >
                   <PackagePlus className="w-4 h-4" />
-                  <span>+ Separar</span>
+                  <span>Gerenciar</span>
                 </button>
               </div>
             );

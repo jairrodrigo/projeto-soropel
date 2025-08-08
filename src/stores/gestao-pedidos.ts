@@ -53,6 +53,7 @@ interface GestaoPedidosState {
   
   // Modals
   separacaoModal: SeparacaoModal;
+  retiradaModal: SeparacaoModal; // Reutiliza a mesma estrutura
   detalhesModal: DetalhesModal;
   editarModal: {
     isOpen: boolean;
@@ -70,6 +71,8 @@ interface GestaoPedidosState {
   // Modal actions
   openSeparacaoModal: (pedidoId: string, produtoIndex: number) => void;
   closeSeparacaoModal: () => void;
+  openRetiradaModal: (pedidoId: string, produtoIndex: number) => void;
+  closeRetiradaModal: () => void;
   openDetalhesModal: (pedido: Pedido) => void;
   closeDetalhesModal: () => void;
   openEditarModal: (pedido: Pedido) => void;
@@ -77,6 +80,7 @@ interface GestaoPedidosState {
   
   // Pedido actions
   separarProduto: (pedidoId: string, produtoIndex: number, quantidade: number) => Promise<void>;
+  retirarProduto: (pedidoId: string, produtoIndex: number, quantidade: number) => Promise<void>;
   separarTodosProdutos: (pedidoId: string) => void;
   finalizarPedido: (pedidoId: string) => void;
   filterByStatus: (status: string) => void;
@@ -98,6 +102,11 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
     prioridade: '',
   },
   separacaoModal: {
+    isOpen: false,
+    pedidoId: null,
+    produtoIndex: null,
+  },
+  retiradaModal: {
     isOpen: false,
     pedidoId: null,
     produtoIndex: null,
@@ -128,7 +137,7 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
             id: item.product?.id || '',
             nome: item.product?.name || 'Produto não encontrado',
             soropelCode: item.product?.soropel_code || 0,
-            unidade: 'Sacos',
+            unidade: 'Pacotes',
             pedido: item.quantity || 0,
             separado: item.separated_quantity || 0,
             estoque: item.quantity || 0,
@@ -350,6 +359,101 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
 
     } catch (error) {
       console.error('❌ Erro na separação do produto:', error)
+    }
+  },
+
+  retirarProduto: async (pedidoId, produtoIndex, quantidade) => {
+    const state = get()
+    const pedido = state.pedidos.find(p => p.id === pedidoId)
+    
+    if (!pedido || !pedido.produtos[produtoIndex]) {
+      console.error('❌ Pedido ou produto não encontrado')
+      return
+    }
+
+    const produto = pedido.produtos[produtoIndex]
+    
+    // Validar se há quantidade suficiente para retirar
+    if (quantidade > produto.separado) {
+      console.error('❌ Quantidade a retirar maior que a separada')
+      return
+    }
+
+    try {
+      // Buscar o pedido completo do banco para ter os IDs dos order_items
+      const orderResult = await ordersService.getOrderByNumber(pedido.numero)
+      
+      if (orderResult.error || !orderResult.data) {
+        console.error('❌ Erro ao buscar pedido do banco:', orderResult.error)
+        return
+      }
+
+      // Encontrar o order_item que corresponde ao produto
+      const orderItem = orderResult.data.order_items?.[produtoIndex]
+      
+      if (!orderItem) {
+        console.error('❌ Order item não encontrado para índice:', produtoIndex)
+        return
+      }
+
+      // Calcular nova quantidade separada (diminuir)
+      const novaSeparada = produto.separado - quantidade
+      
+      // Atualizar no banco de dados
+      const updateResult = await ordersService.updateSeparatedQuantity(orderItem.id, novaSeparada)
+      
+      if (updateResult.error) {
+        console.error('❌ Erro ao atualizar retirada no banco:', updateResult.error)
+        return
+      }
+
+      console.log('✅ Retirada realizada no banco:', {
+        orderItemId: orderItem.id,
+        quantidadeRetirada: quantidade,
+        novaSeparada
+      })
+
+      // Atualizar estado local
+      set((state) => {
+        const novosPedidos = state.pedidos.map(p => {
+          if (p.id === pedidoId) {
+            const novosProdutos = p.produtos.map((prod, index) => {
+              if (index === produtoIndex) {
+                const novoSeparado = prod.separado - quantidade;
+                const pendente = prod.pedido - novoSeparado;
+                const progresso = prod.pedido > 0 ? Math.round((novoSeparado / prod.pedido) * 100) : 0;
+                
+                return {
+                  ...prod,
+                  separado: novoSeparado,
+                  progresso
+                };
+              }
+              return prod;
+            });
+            
+            // Calcular progresso total do pedido
+            const progressoTotal = novosProdutos.length > 0 
+              ? Math.round(novosProdutos.reduce((acc, prod) => acc + prod.progresso, 0) / novosProdutos.length)
+              : 0;
+            
+            return {
+              ...p,
+              produtos: novosProdutos,
+              progresso: progressoTotal
+            };
+          }
+          return p;
+        });
+        
+        return {
+          pedidos: novosPedidos,
+          metricas: calculateMetricasPedidos(novosPedidos),
+        };
+      });
+
+    } catch (error) {
+      console.error('❌ Erro na retirada do produto:', error)
     }
   },
 

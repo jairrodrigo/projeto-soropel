@@ -29,6 +29,7 @@ export const PedidosPage: React.FC = () => {
     openEditarModal,
     closeEditarModal,
     separarProduto,
+    retirarProduto,
     separarTodosProdutos,
     finalizarPedido,
   } = useGestaoPedidosStore();
@@ -52,6 +53,17 @@ export const PedidosPage: React.FC = () => {
         showNotification({ message: '✅ Produto separado com sucesso!', type: 'success' });
       } catch (error) {
         showNotification({ message: '❌ Erro ao separar produto. Tente novamente.', type: 'error' });
+      }
+    }
+  };
+
+  const handleConfirmarRetirada = async (quantidade: number) => {
+    if (separacaoModal.pedidoId && separacaoModal.produtoIndex !== null) {
+      try {
+        await retirarProduto(separacaoModal.pedidoId, separacaoModal.produtoIndex, quantidade);
+        showNotification({ message: '✅ Produto retirado com sucesso!', type: 'success' });
+      } catch (error) {
+        showNotification({ message: '❌ Erro ao retirar produto. Tente novamente.', type: 'error' });
       }
     }
   };
@@ -133,7 +145,8 @@ export const PedidosPage: React.FC = () => {
         pedido={getCurrentPedido()}
         produtoIndex={separacaoModal.produtoIndex}
         onClose={closeSeparacaoModal}
-        onConfirm={handleConfirmarSeparacao}
+        onConfirmSeparar={handleConfirmarSeparacao}
+        onConfirmRetirar={handleConfirmarRetirada}
       />
 
       <DetalhesModal

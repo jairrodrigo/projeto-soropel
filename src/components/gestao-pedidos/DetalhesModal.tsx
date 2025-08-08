@@ -2,7 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { Pedido } from '@/types';
 import { formatDate, getPriorityText, getStatusText } from '@/services/gestaoPedidosData';
-import { formatQuantity } from '@/utils';
+import { formatQuantityAsPackages } from '@/utils';
 
 interface DetalhesModalProps {
   isOpen: boolean;
@@ -66,7 +66,7 @@ export const DetalhesModal: React.FC<DetalhesModalProps> = ({
                 <p><strong>Data de Entrega:</strong> {formatDate(pedido.dataEntrega)}</p>
                 <p><strong>Tipo:</strong> {pedido.tipo}</p>
                 <p><strong>Progresso:</strong> {pedido.progresso}%</p>
-                <p><strong>Quantidade Total:</strong> {formatQuantity(pedido.quantidadeTotal)} Sacos</p>
+                <p><strong>Quantidade Total:</strong> {formatQuantityAsPackages(pedido.quantidadeTotal)} Pacotes</p>
               </div>
             </div>
             
@@ -97,12 +97,12 @@ export const DetalhesModal: React.FC<DetalhesModalProps> = ({
                   {pedido.produtos.map((produto, index) => (
                     <tr key={index} className="border-t">
                       <td className="px-4 py-2 text-sm">{produto.nome}</td>
-                      <td className="px-4 py-2 text-center text-sm">{formatQuantity(produto.pedido)}</td>
+                      <td className="px-4 py-2 text-center text-sm">{formatQuantityAsPackages(produto.pedido)} pacotes<br/>({produto.pedido.toLocaleString('pt-BR')})</td>
                       <td className="px-4 py-2 text-center text-sm font-medium text-blue-600">
-                        {formatQuantity(produto.separado)}
+                        {formatQuantityAsPackages(produto.separado)} pacotes<br/>({produto.separado.toLocaleString('pt-BR')})
                       </td>
                       <td className="px-4 py-2 text-center text-sm font-medium text-orange-600">
-                        {formatQuantity(produto.pedido - produto.separado)}
+                        {formatQuantityAsPackages(produto.pedido - produto.separado)} pacotes<br/>({(produto.pedido - produto.separado).toLocaleString('pt-BR')})
                       </td>
                       <td className="px-4 py-2 text-center text-sm font-medium">
                         {Math.round((produto.separado / produto.pedido) * 100)}%

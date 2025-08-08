@@ -23,6 +23,21 @@ export function formatQuantity(quantity: number): string {
   return quantity.toString()
 }
 
+// Format quantity as packages (each package = 500 units)
+export function formatQuantityAsPackages(quantity: number): string {
+  const packages = quantity / 500
+  if (packages >= 1000000) {
+    const millions = packages / 1000000
+    return millions % 1 === 0 ? `${millions}M` : `${millions.toFixed(1)}M`
+  }
+  if (packages >= 1000) {
+    const thousands = packages / 1000
+    return thousands % 1 === 0 ? `${thousands}mil` : `${thousands.toFixed(1)}mil`
+  }
+  // For packages, show decimal if not whole number
+  return packages % 1 === 0 ? packages.toString() : packages.toFixed(1)
+}
+
 // Format quantity for input/editing (thousands as decimal)
 export function formatQuantityForInput(quantity: number): string {
   if (quantity >= 1000) {
@@ -31,6 +46,13 @@ export function formatQuantityForInput(quantity: number): string {
     return thousands % 1 === 0 ? thousands.toString() : thousands.toFixed(1)
   }
   return quantity.toString()
+}
+
+// Format quantity for packages input (packages as decimal)
+export function formatQuantityForPackagesInput(quantity: number): string {
+  const packages = quantity / 500
+  // Remove trailing zeros but keep precision
+  return packages % 1 === 0 ? packages.toString() : packages.toFixed(1)
 }
 
 // Parse quantity from input back to full number
@@ -44,6 +66,15 @@ export function parseQuantityFromInput(input: string): number {
   }
   
   return num
+}
+
+// Parse packages from input back to units
+export function parsePackagesFromInput(input: string): number {
+  const num = parseFloat(input)
+  if (isNaN(num)) return 0
+  
+  // Convert packages to units (multiply by 500)
+  return num * 500
 }
 
 // Format time
