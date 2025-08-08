@@ -76,7 +76,7 @@ interface GestaoPedidosState {
   closeEditarModal: () => void;
   
   // Pedido actions
-  separarProduto: (pedidoId: string, produtoIndex: number, quantidade: number) => void;
+  separarProduto: (pedidoId: string, produtoIndex: number, quantidade: number) => Promise<void>;
   separarTodosProdutos: (pedidoId: string) => void;
   finalizarPedido: (pedidoId: string) => void;
   filterByStatus: (status: string) => void;
@@ -130,9 +130,11 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
             soropelCode: item.product?.soropel_code || 0,
             unidade: 'Sacos',
             pedido: item.quantity || 0,
-            separado: 0,
+            separado: item.separated_quantity || 0,
             estoque: item.quantity || 0,
-            progresso: 0,
+            progresso: item.separated_quantity && item.quantity 
+              ? Math.round((item.separated_quantity / item.quantity) * 100) 
+              : 0,
             maquina: item.machine?.name || `Máquina ${item.machine?.machine_number || 'N/A'}`,
             observacoes: item.status === 'pendente' ? 'Aguardando separação' : item.status
           }));
@@ -142,7 +144,7 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
           return {
             id: order.id,
             numero: order.order_number || `ID-${order.id.slice(0,8)}`,
-            cliente: order.client_id ? `Cliente ${order.client_id.slice(0,8)}` : 'Cliente não informado',
+            cliente: order.clients?.company_name || order.clients?.fantasy_name || 'Cliente não informado',
             status: convertSupabaseStatusToStoreStatus(order.status),
             prioridade: convertSupabasePriorityToStorePriority(order.priority),
             dataEntrega: order.delivery_date || new Date().toISOString().split('T')[0],
@@ -269,36 +271,86 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
   },
 
   // Pedido actions
-  separarProduto: (pedidoId, produtoIndex, quantidade) => {
-    set((state) => {
-      const novosPedidos = state.pedidos.map(pedido => {
-        if (pedido.id === pedidoId) {
-          const novosProdutos = [...pedido.produtos];
-          const produto = novosProdutos[produtoIndex];
-          
-          // Update produto
-          produto.separado += quantidade;
-          produto.estoque -= quantidade;
-          produto.progresso = Math.round((produto.separado / produto.pedido) * 100);
-          
-          // Update pedido progress
-          const totalSeparado = novosProdutos.reduce((sum, p) => sum + p.separado, 0);
-          const novoProgresso = Math.round((totalSeparado / pedido.quantidadeTotal) * 100);
-          
-          return {
-            ...pedido,
-            produtos: novosProdutos,
-            progresso: novoProgresso
-          };
-        }
-        return pedido;
-      });
+  separarProduto: async (pedidoId, produtoIndex, quantidade) => {
+    const state = get()
+    const pedido = state.pedidos.find(p => p.id === pedidoId)
+    
+    if (!pedido || !pedido.produtos[produtoIndex]) {
+      console.error('❌ Pedido ou produto não encontrado')
+      return
+    }
+
+    const produto = pedido.produtos[produtoIndex]
+    
+    // Encontrar o order_item correspondente no banco
+    // Como não temos order_item_id diretamente, vamos buscar pela combinação ordem + produto
+    try {
+      // Primeiro, vamos buscar o pedido completo do banco para ter os IDs dos order_items
+      const orderResult = await ordersService.getOrderByNumber(pedido.numero)
       
-      return {
-        pedidos: novosPedidos,
-        metricas: calculateMetricasPedidos(novosPedidos),
-      };
-    });
+      if (orderResult.error || !orderResult.data) {
+        console.error('❌ Erro ao buscar pedido do banco:', orderResult.error)
+        return
+      }
+
+      // Encontrar o order_item que corresponde ao produto sendo separado
+      const orderItem = orderResult.data.order_items?.[produtoIndex]
+      
+      if (!orderItem) {
+        console.error('❌ Order item não encontrado para índice:', produtoIndex)
+        return
+      }
+
+      // Calcular nova quantidade separada
+      const novaQuantidadeSeparada = (orderItem.separated_quantity || 0) + quantidade
+
+      // Atualizar no banco
+      const updateResult = await ordersService.updateSeparatedQuantity(
+        orderItem.id, 
+        novaQuantidadeSeparada
+      )
+
+      if (updateResult.error) {
+        console.error('❌ Erro ao salvar separação no banco:', updateResult.error)
+        return
+      }
+
+      console.log('✅ Separação salva no banco com sucesso')
+
+      // Atualizar estado local apenas após sucesso no banco
+      set((state) => {
+        const novosPedidos = state.pedidos.map(pedido => {
+          if (pedido.id === pedidoId) {
+            const novosProdutos = [...pedido.produtos];
+            const produto = novosProdutos[produtoIndex];
+            
+            // Update produto
+            produto.separado += quantidade;
+            produto.estoque -= quantidade;
+            produto.progresso = Math.round((produto.separado / produto.pedido) * 100);
+            
+            // Update pedido progress
+            const totalSeparado = novosProdutos.reduce((sum, p) => sum + p.separado, 0);
+            const novoProgresso = Math.round((totalSeparado / pedido.quantidadeTotal) * 100);
+            
+            return {
+              ...pedido,
+              produtos: novosProdutos,
+              progresso: novoProgresso
+            };
+          }
+          return pedido;
+        });
+        
+        return {
+          pedidos: novosPedidos,
+          metricas: calculateMetricasPedidos(novosPedidos),
+        };
+      });
+
+    } catch (error) {
+      console.error('❌ Erro na separação do produto:', error)
+    }
   },
 
   separarTodosProdutos: (pedidoId) => {

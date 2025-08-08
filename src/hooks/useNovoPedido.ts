@@ -255,10 +255,19 @@ export const useNovoPedido = () => {
       // Preparar dados para o service
       const orderData: NewOrderData = {
         order_number: formData.numeroOrdem,
-        client_id: null, // NULL permitido - cliente não informado
+        client_id: null, // Será determinado automaticamente
         delivery_date: formData.dataEntrega,
         priority: formData.prioridade, // Service converte automaticamente
         observations: formData.observacoes,
+        cliente: formData.cliente.razaoSocial ? {
+          razaoSocial: formData.cliente.razaoSocial,
+          nomeFantasia: formData.cliente.nomeFantasia,
+          cnpj: formData.cliente.cnpj,
+          endereco: formData.cliente.endereco,
+          cep: formData.cliente.cep,
+          telefone: formData.cliente.telefone,
+          email: formData.cliente.email
+        } : undefined,
         produtos: formData.produtos.map(produto => ({
           nome: produto.nome,
           soropel_code: produto.codigoSoropel,

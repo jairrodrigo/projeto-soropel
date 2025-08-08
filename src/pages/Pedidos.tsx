@@ -45,9 +45,14 @@ export const PedidosPage: React.FC = () => {
     openSeparacaoModal(pedidoId, produtoIndex);
   };
 
-  const handleConfirmarSeparacao = (quantidade: number) => {
+  const handleConfirmarSeparacao = async (quantidade: number) => {
     if (separacaoModal.pedidoId && separacaoModal.produtoIndex !== null) {
-      separarProduto(separacaoModal.pedidoId, separacaoModal.produtoIndex, quantidade);
+      try {
+        await separarProduto(separacaoModal.pedidoId, separacaoModal.produtoIndex, quantidade);
+        showNotification({ message: '✅ Produto separado com sucesso!', type: 'success' });
+      } catch (error) {
+        showNotification({ message: '❌ Erro ao separar produto. Tente novamente.', type: 'error' });
+      }
     }
   };
 

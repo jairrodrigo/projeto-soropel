@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { Pedido } from '@/types';
 import { formatDate, getPriorityText, getStatusText } from '@/services/gestaoPedidosData';
+import { formatQuantity } from '@/utils';
 
 interface DetalhesModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export const DetalhesModal: React.FC<DetalhesModalProps> = ({
             <div>
               <h4 className="text-lg font-semibold mb-3">Informações do Pedido</h4>
               <div className="space-y-2 text-sm">
-                <p><strong>Código:</strong> {pedido.id}</p>
+                <p><strong>Código:</strong> {pedido.numero}</p>
                 <p><strong>Cliente:</strong> {pedido.cliente}</p>
                 <p>
                   <strong>Status:</strong> 
@@ -65,7 +66,7 @@ export const DetalhesModal: React.FC<DetalhesModalProps> = ({
                 <p><strong>Data de Entrega:</strong> {formatDate(pedido.dataEntrega)}</p>
                 <p><strong>Tipo:</strong> {pedido.tipo}</p>
                 <p><strong>Progresso:</strong> {pedido.progresso}%</p>
-                <p><strong>Quantidade Total:</strong> {pedido.quantidadeTotal.toFixed(3)} MIL</p>
+                <p><strong>Quantidade Total:</strong> {formatQuantity(pedido.quantidadeTotal)} Sacos</p>
               </div>
             </div>
             
@@ -96,12 +97,12 @@ export const DetalhesModal: React.FC<DetalhesModalProps> = ({
                   {pedido.produtos.map((produto, index) => (
                     <tr key={index} className="border-t">
                       <td className="px-4 py-2 text-sm">{produto.nome}</td>
-                      <td className="px-4 py-2 text-center text-sm">{produto.pedido.toFixed(3)}</td>
+                      <td className="px-4 py-2 text-center text-sm">{formatQuantity(produto.pedido)}</td>
                       <td className="px-4 py-2 text-center text-sm font-medium text-blue-600">
-                        {produto.separado.toFixed(3)}
+                        {formatQuantity(produto.separado)}
                       </td>
                       <td className="px-4 py-2 text-center text-sm font-medium text-orange-600">
-                        {(produto.pedido - produto.separado).toFixed(3)}
+                        {formatQuantity(produto.pedido - produto.separado)}
                       </td>
                       <td className="px-4 py-2 text-center text-sm font-medium">
                         {Math.round((produto.separado / produto.pedido) * 100)}%

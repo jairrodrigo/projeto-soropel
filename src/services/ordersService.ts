@@ -40,6 +40,15 @@ export interface NewOrderData {
   delivery_date?: string
   observations?: string
   notes?: string // Compatibilidade
+  cliente?: {
+    razaoSocial: string
+    nomeFantasia?: string
+    cnpj?: string
+    endereco?: string
+    cep?: string
+    telefone?: string
+    email?: string
+  }
   produtos: {
     nome: string
     soropel_code?: number
@@ -115,6 +124,79 @@ const calculateSimilarity = (str1: string, str2: string): number => {
   return (longer.length - levenshteinDistance(longer, shorter)) / longer.length
 }
 
+// 📝 FUNÇÃO: CRIAR OU BUSCAR CLIENTE
+export const createOrFindClient = async (clientData: {
+  razaoSocial: string
+  nomeFantasia?: string
+  cnpj?: string
+  endereco?: string
+  cep?: string
+  telefone?: string
+  email?: string
+}): Promise<DatabaseResult<{ id: string }>> => {
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    // Primeiro, tentar encontrar cliente existente por razão social ou CNPJ
+    let existingClient = null
+    
+    if (clientData.cnpj) {
+      const { data } = await supabase!
+        .from('clients')
+        .select('id')
+        .eq('cnpj', clientData.cnpj)
+        .single()
+      existingClient = data
+    }
+    
+    if (!existingClient && clientData.razaoSocial) {
+      const { data } = await supabase!
+        .from('clients')
+        .select('id')
+        .ilike('company_name', clientData.razaoSocial.trim())
+        .single()
+      existingClient = data
+    }
+
+    if (existingClient) {
+      return { data: existingClient, error: null }
+    }
+
+    // Se não encontrou, criar novo cliente
+    const { data: newClient, error } = await supabase!
+      .from('clients')
+      .insert({
+        company_name: clientData.razaoSocial,
+        fantasy_name: clientData.nomeFantasia || null,
+        cnpj: clientData.cnpj || null,
+        address: clientData.endereco || null,
+        cep: clientData.cep || null,
+        phone: clientData.telefone || null,
+        email: clientData.email || null
+      })
+      .select('id')
+      .single()
+
+    if (error) {
+      console.error('❌ Erro ao criar cliente:', error)
+      return {
+        data: null,
+        error: `Erro ao criar cliente: ${error.message}`
+      }
+    }
+
+    return { data: newClient, error: null }
+
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
 // 📝 FUNÇÃO: CRIAR PEDIDO COMPLETO
 export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResult<Order>> => {
   try {
@@ -124,12 +206,26 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
       throw createSupabaseUnavailableError()
     }
 
-    // 1. Criar o pedido principal
+    // 1. Criar ou buscar cliente se informações foram fornecidas
+    let clientId = orderData.client_id
+    
+    if (orderData.cliente && orderData.cliente.razaoSocial) {
+      const clientResult = await createOrFindClient(orderData.cliente)
+      
+      if (clientResult.error) {
+        console.warn('⚠️ Erro ao processar cliente, salvando pedido sem cliente:', clientResult.error)
+        clientId = null
+      } else {
+        clientId = clientResult.data?.id || null
+      }
+    }
+
+    // 2. Criar o pedido principal
     const { data: orderResult, error: orderError } = await supabase!
       .from('orders')
       .insert({
         order_number: orderData.order_number,
-        client_id: orderData.client_id || null, // NULL é permitido
+        client_id: clientId, // Usar cliente criado/encontrado ou null
         priority: convertFrontendPriorityToDatabase(orderData.priority || 'normal'),
         delivery_date: orderData.delivery_date,
         observations: orderData.observations || orderData.notes,
@@ -416,9 +512,16 @@ export const getOrders = async (
       .from('orders')
       .select(`
         *,
+        clients (
+          id,
+          company_name,
+          fantasy_name,
+          cnpj
+        ),
         order_items (
           id,
           quantity,
+          separated_quantity,
           status,
           product:products (
             id,
@@ -627,6 +730,47 @@ export const updateOrder = async (
       return {
         data: null,
         error: `Erro ao atualizar pedido: ${error.message}`
+      }
+    }
+
+    return {
+      data,
+      error: null
+    }
+
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
+// 📝 FUNÇÃO: ATUALIZAR QUANTIDADE SEPARADA DE UM ITEM
+export const updateSeparatedQuantity = async (
+  itemId: string,
+  separatedQuantity: number
+): Promise<DatabaseResult<OrderItem>> => {
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    const { data, error } = await supabase!
+      .from('order_items')
+      .update({
+        separated_quantity: separatedQuantity,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', itemId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Erro ao atualizar quantidade separada:', error)
+      return {
+        data: null,
+        error: `Erro ao atualizar separação: ${error.message}`
       }
     }
 

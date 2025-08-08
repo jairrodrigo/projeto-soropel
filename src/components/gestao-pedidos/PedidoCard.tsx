@@ -2,6 +2,7 @@ import React from 'react';
 import { PackagePlus, Eye, Package, Check, Edit } from 'lucide-react';
 import { Pedido } from '@/types';
 import { formatDate, isAtrasado, getPriorityText } from '@/services/gestaoPedidosData';
+import { formatQuantity } from '@/utils';
 
 interface PedidoCardProps {
   pedido: Pedido;
@@ -57,7 +58,7 @@ export const PedidoCard: React.FC<PedidoCardProps> = ({
             </span>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-gray-900">{pedido.quantidadeTotal.toFixed(3)} MIL</p>
+            <p className="text-lg font-bold text-gray-900">{formatQuantity(pedido.quantidadeTotal)} Sacos</p>
             <p className={`text-sm ${dataEntregaClass}`}>
               Entrega: {formatDate(pedido.dataEntrega)}
               {isOrderAtrasado && ' ⚠️'}
@@ -93,15 +94,15 @@ export const PedidoCard: React.FC<PedidoCardProps> = ({
                   <div className="flex flex-col gap-1 text-xs">
                     <div>
                       <span className="text-gray-500">Pedido:</span>
-                      <span className="font-semibold ml-2">{produto.pedido.toFixed(3)}</span>
+                      <span className="font-semibold ml-2">{formatQuantity(produto.pedido)}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Separado:</span>
-                      <span className="font-semibold text-blue-600 ml-2">{produto.separado.toFixed(3)}</span>
+                      <span className="font-semibold text-blue-600 ml-2">{formatQuantity(produto.separado)}</span>
                     </div>
                     <div>
                       <span className="text-gray-500">Pendente:</span>
-                      <span className="font-semibold text-orange-600 ml-2">{pendente.toFixed(3)}</span>
+                      <span className="font-semibold text-orange-600 ml-2">{formatQuantity(pendente)}</span>
                     </div>
                   </div>
                 </div>
