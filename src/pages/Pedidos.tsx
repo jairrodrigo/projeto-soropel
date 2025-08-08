@@ -138,6 +138,7 @@ export const PedidosPage: React.FC = () => {
       />
 
       <ModalEditarPedido
+        key={editarModal.pedido?.id || 'modal-editar'}
         isOpen={editarModal.isOpen}
         pedido={editarModal.pedido}
         onClose={closeEditarModal}

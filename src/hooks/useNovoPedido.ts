@@ -255,26 +255,16 @@ export const useNovoPedido = () => {
       // Preparar dados para o service
       const orderData: NewOrderData = {
         order_number: formData.numeroOrdem,
-        client_data: {
-          company_name: formData.cliente.razaoSocial,
-          fantasy_name: formData.cliente.nomeFantasia,
-          cnpj: formData.cliente.cnpj,
-          email: formData.cliente.email,
-          phone: formData.cliente.telefone,
-          address: formData.cliente.endereco,
-          zipcode: formData.cliente.cep
-        },
+        client_id: null, // NULL permitido - cliente não informado
         delivery_date: formData.dataEntrega,
         priority: formData.prioridade, // Service converte automaticamente
-        tipo: formData.tipo,
-        products: formData.produtos.map(produto => ({
-          name: produto.nome,
-          quantity: produto.quantidade,
-          unit_type: produto.unidade,
-          machine_id: produto.maquinaSugerida,
-          priority: formData.prioridade // Usar mesma prioridade do pedido
-        })),
-        observations: formData.observacoes
+        observations: formData.observacoes,
+        produtos: formData.produtos.map(produto => ({
+          nome: produto.nome,
+          soropel_code: produto.codigoSoropel,
+          quantidade: produto.quantidade,
+          maquinaSugerida: produto.maquinaSugerida
+        }))
       };
       
       // Criar pedido usando service real

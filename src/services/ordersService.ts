@@ -8,15 +8,11 @@ import type { DatabaseResult } from '../types/supabase'
 export interface Order {
   id: string
   order_number: string
-  customer_id?: string
-  customer_name?: string
-  status: 'aguardando_producao' | 'em_producao' | 'produzido' | 'produzido_parcial' | 
-         'separado_parcial' | 'cancelado' | 'em_andamento' | 'liberado_completo' | 
-         'liberado_parcial' | 'entrega_completa' | 'entrega_parcial'
+  client_id?: string | null
+  status: 'pendente' | 'producao' | 'finalizado' | 'entregue'
   priority: 'normal' | 'especial' | 'urgente'
-  tipo?: 'timbrado' | 'neutro'
   delivery_date?: string
-  notes?: string
+  observations?: string
   total_quantity?: number
   created_at: string
   updated_at: string
@@ -39,11 +35,11 @@ export interface OrderItem {
 
 export interface NewOrderData {
   order_number: string
-  customer_name?: string
+  client_id?: string | null
   priority?: 'normal' | 'especial' | 'urgente'
-  tipo?: 'timbrado' | 'neutro'
   delivery_date?: string
-  notes?: string
+  observations?: string
+  notes?: string // Compatibilidade
   produtos: {
     nome: string
     soropel_code?: number
@@ -66,11 +62,57 @@ export interface OrderWithItems extends Order {
 
 // 🛠️ UTILITÁRIOS INTERNOS
 const isSupabaseAvailable = (): boolean => {
-  return supabase !== null
+  console.log('🔍 DEBUG - isSupabaseAvailable check:', {
+    supabaseExists: !!supabase,
+    supabaseNull: supabase === null,
+    supabaseUndefined: supabase === undefined
+  })
+  return !!supabase
 }
 
 const createSupabaseUnavailableError = () => {
   return new Error('Supabase não está disponível. Verifique as variáveis de ambiente.')
+}
+
+// 🔄 CONVERSÃO DE PRIORIDADES
+const convertFrontendPriorityToDatabase = (frontendPriority: string): 'normal' | 'especial' | 'urgente' => {
+  switch (frontendPriority) {
+    case 'urgente': return 'urgente'
+    case 'alta': return 'especial'
+    case 'media': return 'normal'
+    case 'baixa': return 'normal'
+    default: return 'normal'
+  }
+}
+
+// 🔍 FUNÇÃO PARA CALCULAR SIMILARIDADE ENTRE STRINGS
+const calculateSimilarity = (str1: string, str2: string): number => {
+  const longer = str1.length > str2.length ? str1 : str2
+  const shorter = str1.length > str2.length ? str2 : str1
+  
+  if (longer.length === 0) return 1.0
+  
+  const levenshteinDistance = (s1: string, s2: string): number => {
+    const matrix = Array(s2.length + 1).fill(null).map(() => Array(s1.length + 1).fill(null))
+    
+    for (let i = 0; i <= s1.length; i++) matrix[0][i] = i
+    for (let j = 0; j <= s2.length; j++) matrix[j][0] = j
+    
+    for (let j = 1; j <= s2.length; j++) {
+      for (let i = 1; i <= s1.length; i++) {
+        const cost = s1[i - 1] === s2[j - 1] ? 0 : 1
+        matrix[j][i] = Math.min(
+          matrix[j][i - 1] + 1,
+          matrix[j - 1][i] + 1,
+          matrix[j - 1][i - 1] + cost
+        )
+      }
+    }
+    
+    return matrix[s2.length][s1.length]
+  }
+  
+  return (longer.length - levenshteinDistance(longer, shorter)) / longer.length
 }
 
 // 📝 FUNÇÃO: CRIAR PEDIDO COMPLETO
@@ -87,12 +129,11 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
       .from('orders')
       .insert({
         order_number: orderData.order_number,
-        customer_name: orderData.customer_name || 'Cliente não informado',
-        priority: orderData.priority || 'normal',
-        tipo: orderData.tipo || 'neutro',
+        client_id: orderData.client_id || null, // NULL é permitido
+        priority: convertFrontendPriorityToDatabase(orderData.priority || 'normal'),
         delivery_date: orderData.delivery_date,
-        notes: orderData.notes,
-        status: 'aguardando_producao'
+        observations: orderData.observations || orderData.notes,
+        status: 'pendente' // Status válido conforme constraint
       })
       .select()
       .single()
@@ -112,24 +153,81 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
       const orderItems = []
       
       for (const produto of orderData.produtos) {
-        // Buscar o produto pelo nome ou código
-        let productQuery = supabase!
-          .from('products')
-          .select('id, soropel_code, name')
-          .eq('active', true)
+        // 🔍 BUSCA INTELIGENTE DE PRODUTOS
+        let productData = null
+        let productError = null
 
-        // Se tem código Soropel, usar ele
+        // Estratégia 1: Se tem código Soropel, usar ele (mais preciso)
         if (produto.soropel_code) {
-          productQuery = productQuery.eq('soropel_code', produto.soropel_code)
-        } else {
-          // Senão, buscar por nome (case insensitive)
-          productQuery = productQuery.ilike('name', `%${produto.nome}%`)
+          const result = await supabase!
+            .from('products')
+            .select('id, soropel_code, name')
+            .eq('active', true)
+            .eq('soropel_code', produto.soropel_code)
+            .limit(1)
+          
+          if (result.data && result.data.length > 0) {
+            productData = result.data[0]
+            productError = null
+          }
         }
 
-        const { data: productData, error: productError } = await productQuery.limit(1).single()
+        // Estratégia 2: Busca exata por nome (se não achou por código)
+        if (!productData && produto.nome) {
+          const result = await supabase!
+            .from('products')
+            .select('id, soropel_code, name')
+            .eq('active', true)
+            .ilike('name', produto.nome.trim())
+            .limit(1)
+          
+          if (result.data && result.data.length > 0) {
+            productData = result.data[0]
+            productError = null
+          }
+        }
 
-        if (productError) {
-          console.warn(`⚠️ Produto não encontrado: ${produto.nome}`)
+        // Estratégia 3: Busca por palavras-chave importantes
+        if (!productData && produto.nome) {
+          // Extrair palavras-chave do nome do produto
+          const keywords = produto.nome
+            .toLowerCase()
+            .replace(/[^\w\s]/g, ' ') // Remove pontuação
+            .split(/\s+/)
+            .filter(word => word.length > 2) // Palavras com mais de 2 chars
+            .filter(word => !['saco', 'de', 'da', 'do', 'com', 'para'].includes(word)) // Remove stopwords
+
+          console.log(`🔍 Tentando buscar produto com keywords: ${keywords.join(', ')} (original: ${produto.nome})`)
+
+          // Tentar busca com primeira palavra-chave importante
+          if (keywords.length > 0) {
+            const result = await supabase!
+              .from('products')
+              .select('id, soropel_code, name')
+              .eq('active', true)
+              .ilike('name', `%${keywords[0]}%`)
+              .limit(5) // Pegar várias opções
+
+            if (result.data && result.data.length > 0) {
+              // Se tem múltiplas opções, tentar encontrar a melhor match
+              let bestMatch = result.data[0]
+              if (result.data.length > 1) {
+                for (const candidate of result.data) {
+                  const similarity = calculateSimilarity(produto.nome.toLowerCase(), candidate.name.toLowerCase())
+                  if (similarity > calculateSimilarity(produto.nome.toLowerCase(), bestMatch.name.toLowerCase())) {
+                    bestMatch = candidate
+                  }
+                }
+              }
+              productData = bestMatch
+              productError = null
+              console.log(`✅ Produto encontrado por keyword: ${bestMatch.name} (código: ${bestMatch.soropel_code})`)
+            }
+          }
+        }
+
+        if (!productData) {
+          console.warn(`⚠️ Produto não encontrado após busca inteligente: ${produto.nome}`)
           continue // Pular este produto se não encontrar
         }
 
@@ -138,15 +236,21 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
         if (produto.maquinaSugerida) {
           const machineNumber = produto.maquinaSugerida.match(/\d+/)?.[0]
           if (machineNumber) {
-            const { data: machineData } = await supabase!
+            const { data: machineData, error: machineError } = await supabase!
               .from('machines')
               .select('id')
-              .eq('number', parseInt(machineNumber))
+              .eq('machine_number', parseInt(machineNumber))
               .single()
             
-            machineId = machineData?.id || null
+            if (machineData && !machineError) {
+              machineId = machineData.id
+            } else {
+              console.warn(`⚠️ Máquina ${machineNumber} não encontrada`)
+            }
           }
         }
+
+        console.log(`🔍 DEBUG - Adicionando order_item: produto=${productData.name} (${productData.id}), quantidade=${produto.quantidade}, máquina=${machineId}`)
 
         orderItems.push({
           order_id: orderResult.id,
@@ -159,6 +263,8 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
 
       // Inserir todos os itens
       if (orderItems.length > 0) {
+        console.log(`🔍 DEBUG - Criando ${orderItems.length} order_items:`, orderItems)
+        
         const { error: itemsError } = await supabase!
           .from('order_items')
           .insert(orderItems)
@@ -174,7 +280,9 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
           }
         }
 
-        // ✅ Log removido para console limpo
+        console.log(`✅ DEBUG - ${orderItems.length} order_items criados com sucesso`)
+      } else {
+        console.warn('⚠️ DEBUG - Nenhum order_item para criar!')
       }
     }
 
@@ -237,6 +345,55 @@ export const getOrderById = async (orderId: string): Promise<DatabaseResult<Orde
   }
 }
 
+// 📝 FUNÇÃO: BUSCAR PEDIDO POR ORDER_NUMBER (OP-XXXX)
+export const getOrderByNumber = async (orderNumber: string): Promise<DatabaseResult<OrderWithItems>> => {
+  console.log('🔍 DEBUG - getOrderByNumber chamada para:', orderNumber)
+  try {
+    if (!isSupabaseAvailable()) {
+      throw createSupabaseUnavailableError()
+    }
+
+    const { data, error } = await supabase!
+      .from('orders')
+      .select(`
+        *,
+        order_items:order_items (
+          *,
+          product:products (
+            name,
+            soropel_code
+          ),
+          machine:machines (
+            name
+          )
+        )
+      `)
+      .eq('order_number', orderNumber)
+      .single()
+
+    if (error) {
+      console.log('🚨 DEBUG - Erro no getOrderByNumber:', error)
+      return {
+        data: null,
+        error: `Erro ao buscar pedido: ${error.message}`
+      }
+    }
+
+    console.log('✅ DEBUG - Pedido encontrado por order_number:', data.order_number)
+    return {
+      data,
+      error: null
+    }
+
+  } catch (error) {
+    console.log('🚨 DEBUG - Erro capturado no getOrderByNumber:', error)
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    }
+  }
+}
+
 // 📝 FUNÇÃO: LISTAR PEDIDOS
 export const getOrders = async (
   limit: number = 20,
@@ -247,14 +404,34 @@ export const getOrders = async (
     customer_name?: string
   }
 ): Promise<DatabaseResult<Order[]>> => {
+  console.log('🔍 DEBUG - getOrders chamada iniciada')
   try {
     if (!isSupabaseAvailable()) {
+      console.log('🚨 DEBUG - Supabase não disponível, retornando erro')
       throw createSupabaseUnavailableError()
     }
 
+    console.log('🔍 DEBUG - Executando query Supabase...')
     let query = supabase!
       .from('orders')
-      .select('*')
+      .select(`
+        *,
+        order_items (
+          id,
+          quantity,
+          status,
+          product:products (
+            id,
+            name,
+            soropel_code
+          ),
+          machine:machines (
+            id,
+            name,
+            machine_number
+          )
+        )
+      `)
       .order('created_at', { ascending: false })
 
     // Aplicar filtros se fornecidos
@@ -271,19 +448,32 @@ export const getOrders = async (
     const { data, error } = await query
       .range(offset, offset + limit - 1)
 
+    console.log('🔍 DEBUG - Resultado query:', { data, error, dataLength: data?.length })
+
+    if (data && data.length > 0) {
+      console.log('🔍 DEBUG - Primeiro pedido com order_items:', {
+        orderId: data[0].id,
+        orderItemsCount: data[0].order_items?.length || 0,
+        orderItems: data[0].order_items
+      })
+    }
+
     if (error) {
+      console.log('🚨 DEBUG - Erro na query:', error)
       return {
         data: null,
         error: `Erro ao buscar pedidos: ${error.message}`
       }
     }
 
+    console.log('✅ DEBUG - Retornando dados:', data?.length || 0, 'pedidos')
     return {
       data: data || [],
       error: null
     }
 
   } catch (error) {
+    console.log('🚨 DEBUG - Erro capturado na getOrders:', error)
     return {
       data: null,
       error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -411,11 +601,10 @@ export const getOrdersStats = async (): Promise<DatabaseResult<{
 export const updateOrder = async (
   orderId: string,
   updateData: {
-    customer_name?: string
     priority?: Order['priority']
     tipo?: Order['tipo']
     delivery_date?: string
-    notes?: string
+    observations?: string
     status?: Order['status']
   }
 ): Promise<DatabaseResult<Order>> => {

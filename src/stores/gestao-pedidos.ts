@@ -3,20 +3,32 @@ import { Pedido, MetricasPedidos, FiltrosPedidos, SeparacaoModal, DetalhesModal 
 import { mockPedidos, calculateMetricasPedidos } from '@/services/gestaoPedidosData';
 import * as ordersService from '@/services/ordersService';
 
-// 🔄 Funções de conversão entre tipos Supabase e Store
+// 🔄 Funções de conversão entre tipos Supabase e Store - SIMPLIFICADO
 const convertSupabaseStatusToStoreStatus = (
   supabaseStatus: ordersService.Order['status']
 ): Pedido['status'] => {
+  // Mapeamento direto para os status reais do banco
   switch (supabaseStatus) {
-    case 'aguardando_producao': return 'aguardando';
-    case 'em_producao': return 'producao';
-    case 'em_andamento': return 'producao';
-    case 'produzido': return 'separado';
-    case 'separado_parcial': return 'separado';
-    case 'liberado_completo': return 'finalizado';
-    case 'entrega_completa': return 'finalizado';
-    case 'cancelado': return 'finalizado';
+    case 'pendente': return 'aguardando';
+    case 'producao': return 'producao'; 
+    case 'finalizado': return 'finalizado';
+    case 'entregue': return 'finalizado';
     default: return 'aguardando';
+  }
+};
+
+// 🔄 Função para converter status do frontend para o banco
+const convertStoreStatusToSupabaseStatus = (
+  storeStatus: Pedido['status']
+): ordersService.Order['status'] => {
+  switch (storeStatus) {
+    case 'aguardando': return 'pendente';
+    case 'producao': return 'producao';
+    case 'finalizado': return 'finalizado';
+    case 'separado': return 'finalizado'; // separado vira finalizado
+    case 'atrasado': return 'pendente'; // atrasado vira pendente
+    case 'urgente': return 'pendente'; // urgente vira pendente
+    default: return 'pendente';
   }
 };
 
@@ -107,22 +119,42 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
       // Buscar pedidos reais do Supabase
       const result = await ordersService.getOrders();
       
-      if (result.success && result.data) {
+      if (!result.error && result.data) {
+        console.log('🔍 STORE DEBUG - Convertendo pedidos do Supabase:', result.data.length)
+        
         // Converter dados do Supabase para formato do store
-        const pedidosConvertidos = result.data.map((order): Pedido => ({
-          id: order.order_number || order.id,
-          cliente: order.customer_name || 'Cliente não informado',
-          status: convertSupabaseStatusToStoreStatus(order.status),
-          prioridade: convertSupabasePriorityToStorePriority(order.priority),
-          dataEntrega: order.delivery_date || new Date().toISOString().split('T')[0],
-          quantidadeTotal: order.total_quantity || 0,
-          progresso: 0, // TODO: calcular baseado nos order_items
-          tipo: order.tipo || 'neutro',
-          produtos: [], // TODO: buscar order_items separadamente
-          maquinaSugerida: 'A definir',
-          bobinaDisponivel: 'Verificar estoque',
-          observacoes: order.notes || ''
-        }));
+        const pedidosConvertidos = result.data.map((order): Pedido => {
+          const produtos = (order.order_items || []).map((item): Produto => ({
+            id: item.product?.id || '',
+            nome: item.product?.name || 'Produto não encontrado',
+            soropelCode: item.product?.soropel_code || 0,
+            unidade: 'Sacos',
+            pedido: item.quantity || 0,
+            separado: 0,
+            estoque: item.quantity || 0,
+            progresso: 0,
+            maquina: item.machine?.name || `Máquina ${item.machine?.machine_number || 'N/A'}`,
+            observacoes: item.status === 'pendente' ? 'Aguardando separação' : item.status
+          }));
+
+          console.log(`🔍 STORE DEBUG - Pedido ${order.order_number}: ${produtos.length} produtos convertidos`)
+
+          return {
+            id: order.id,
+            numero: order.order_number || `ID-${order.id.slice(0,8)}`,
+            cliente: order.client_id ? `Cliente ${order.client_id.slice(0,8)}` : 'Cliente não informado',
+            status: convertSupabaseStatusToStoreStatus(order.status),
+            prioridade: convertSupabasePriorityToStorePriority(order.priority),
+            dataEntrega: order.delivery_date || new Date().toISOString().split('T')[0],
+            quantidadeTotal: order.total_units || 0,
+            progresso: order.progress_percentage || 0,
+            tipo: order.tipo || 'neutro',
+            produtos: produtos,
+            maquinaSugerida: 'A definir',
+            bobinaDisponivel: 'Verificar estoque',
+            observacoes: order.observations || ''
+          }
+        });
 
         set({
           pedidos: pedidosConvertidos,

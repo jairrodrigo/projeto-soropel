@@ -2,7 +2,8 @@ import { Pedido, MetricasPedidos } from '@/types';
 
 export const mockPedidos: Pedido[] = [
   {
-    id: 'OP-1621',
+    id: 'mock-uuid-1621',
+    numero: 'OP-1621',
     cliente: 'EMBALSUL LTDA',
     status: 'aguardando',
     prioridade: 'alta',
@@ -19,7 +20,8 @@ export const mockPedidos: Pedido[] = [
     observacoes: 'Cliente preferencial - priorizar entrega'
   },
   {
-    id: 'OP-1609',
+    id: 'mock-uuid-1609',
+    numero: 'OP-1609',
     cliente: 'PONTO DE BALA',
     status: 'urgente',
     prioridade: 'urgente',
@@ -38,7 +40,8 @@ export const mockPedidos: Pedido[] = [
     observacoes: 'URGENTE - Cliente ligou cobrando entrega'
   },
   {
-    id: 'OP-1540',
+    id: 'mock-uuid-1540',
+    numero: 'OP-1540',
     cliente: 'DIL DOCES',
     status: 'producao',
     prioridade: 'alta',
@@ -55,7 +58,8 @@ export const mockPedidos: Pedido[] = [
     observacoes: 'Máquina 9 necessária para setup especial'
   },
   {
-    id: 'OP-1622',
+    id: 'mock-uuid-1622',
+    numero: 'OP-1622',
     cliente: 'DOCE MANIA',
     status: 'producao',
     prioridade: 'media',
@@ -71,7 +75,8 @@ export const mockPedidos: Pedido[] = [
     observacoes: 'Produção normal'
   },
   {
-    id: 'OP-1623',
+    id: 'mock-uuid-1623',
+    numero: 'OP-1623',
     cliente: 'PADARIA CENTRAL',
     status: 'atrasado',
     prioridade: 'alta',

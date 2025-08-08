@@ -5,6 +5,21 @@ import * as ordersService from '@/services/ordersService'
 import * as productsService from '@/services/productsService'
 import type { Product } from '@/types/supabase'
 
+// 🔄 Função para converter status do frontend para o banco
+const convertStoreStatusToSupabase = (
+  storeStatus: Pedido['status']
+): ordersService.Order['status'] => {
+  switch (storeStatus) {
+    case 'aguardando': return 'pendente';
+    case 'producao': return 'producao';
+    case 'finalizado': return 'finalizado';
+    case 'separado': return 'finalizado'; // separado vira finalizado
+    case 'atrasado': return 'pendente'; // atrasado vira pendente
+    case 'urgente': return 'pendente'; // urgente vira pendente
+    default: return 'pendente';
+  }
+};
+
 interface EditablePedido {
   customer_name: string
   priority: 'normal' | 'especial' | 'urgente'
@@ -34,9 +49,6 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
   onClose,
   onSave
 }) => {
-  // Proteção contra crash - não renderizar se não houver pedido
-  if (!isOpen || !pedido) return null
-
   // Estados do formulário
   const [formData, setFormData] = useState<EditablePedido>({
     customer_name: '',
@@ -192,15 +204,28 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
 
     try {
       // 1. Atualizar dados principais do pedido
+      console.log('🔍 DEBUG - Dados sendo enviados para updateOrder:', {
+        pedidoId: pedido.id,
+        dadosUpdate: {
+          priority: formData.priority,
+          delivery_date: formData.delivery_date,
+          observations: formData.notes,
+          status: convertStoreStatusToSupabase(formData.status)
+        }
+      })
+      
       const updateResult = await ordersService.updateOrder(pedido.id, {
-        customer_name: formData.customer_name,
+        // client_id: deixar como está, será implementado quando necessário
         priority: formData.priority,
         delivery_date: formData.delivery_date,
-        notes: formData.notes,
-        status: formData.status
+        observations: formData.notes, // notes -> observations
+        status: convertStoreStatusToSupabase(formData.status) // Converter status
+        // Removido customer_name que não existe na tabela
       })
 
-      if (!updateResult.success) {
+      console.log('🔍 DEBUG - Resultado do updateOrder:', updateResult)
+
+      if (updateResult.error) {
         throw new Error(updateResult.error || 'Erro ao atualizar pedido')
       }
 
@@ -216,6 +241,8 @@ export const ModalEditarPedido: React.FC<ModalEditarPedidoProps> = ({
       setSaving(false)
     }
   }
+  // Proteção contra renderização sem dados
+  if (!isOpen || !pedido) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">

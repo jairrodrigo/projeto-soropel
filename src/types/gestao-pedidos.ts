@@ -8,7 +8,8 @@ export interface Produto {
 }
 
 export interface Pedido {
-  id: string;
+  id: string; // UUID para operações de banco
+  numero: string; // OP-XXXX para exibição
   cliente: string;
   status: 'aguardando' | 'producao' | 'atrasado' | 'urgente' | 'separado' | 'finalizado';
   prioridade: 'urgente' | 'alta' | 'media' | 'baixa';
