@@ -1,8 +1,10 @@
 import React from 'react'
-import { Activity, Settings, Package2, Clipboard } from 'lucide-react'
+import { Activity, Settings, Package2, Clipboard, Package } from 'lucide-react'
 import { cn } from '@/utils'
 import type { BobinaFormData, BobinaStatus } from '@/types/nova-bobina'
+import type { Product } from '@/types/supabase'
 import { MAQUINAS } from '@/types/nova-bobina'
+import { ProductSelector } from './ProductSelector'
 
 interface StatusControlProps {
   formData: BobinaFormData
@@ -21,21 +23,21 @@ export const StatusControl: React.FC<StatusControlProps> = ({
     {
       value: 'estoque' as const,
       label: 'ESTOQUE',
-      icon: '📦',
+      icon: Package,
       description: 'Disponível para uso',
       color: 'green'
     },
     {
       value: 'em-maquina' as const,
       label: 'EM MÁQUINA',
-      icon: '⚙️',
-      description: 'Sendo utilizada',
+      icon: Settings,
+      description: 'Sendo utilizada na produção',
       color: 'blue'
     },
     {
       value: 'sobra' as const,
       label: 'SOBRA',
-      icon: '📏',
+      icon: Package2,
       description: 'Resto aproveitável',
       color: 'yellow'
     }
@@ -56,52 +58,59 @@ export const StatusControl: React.FC<StatusControlProps> = ({
     }
   }
 
+  const handleProductSelect = (product: Product | null) => {
+    onUpdateFormData({
+      produtoProducaoId: product?.id,
+      produtoProducao: product?.name || ''
+    })
+  }
+
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
-      <h3 className="text-lg font-semibold mb-4">Status e Controle da Bobina</h3>
+    <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100">
+      <div className="flex items-center space-x-3 mb-6">
+        <Activity className="w-6 h-6 text-blue-600" />
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Status e Controle da Bobina</h3>
+      </div>
       
-      <div className="space-y-6">
-        {/* Status Selection */}
+      <div className="space-y-8">
+        {/* Status Selection - Enhanced */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            <Activity className="w-4 h-4 inline mr-1" />
-            Status da Bobina
+          <label className="block text-sm font-bold text-gray-900 mb-4">
+            Status da Bobina *
           </label>
           
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {statusOptions.map((option) => (
               <div
                 key={option.value}
                 onClick={() => onUpdateStatus(option.value)}
-                className="flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                className={cn(
+                  "p-4 border-2 rounded-xl hover:shadow-md transition-all duration-200 cursor-pointer",
+                  formData.status === option.value
+                    ? `border-${option.color}-500 bg-${option.color}-50 shadow-lg`
+                    : "border-gray-300 bg-white hover:border-gray-400"
+                )}
               >
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl">{option.icon}</span>
+                <div className="flex flex-col items-center text-center space-y-2">
+                  <option.icon className="w-8 h-8 text-gray-600" />
                   <div>
-                    <div className="font-medium text-base">{option.label}</div>
-                    <div className="text-sm text-gray-500">{option.description}</div>
-                  </div>
-                </div>
-                
-                <div className="relative">
-                  <input
-                    type="radio"
-                    name="status"
-                    value={option.value}
-                    checked={formData.status === option.value}
-                    onChange={() => onUpdateStatus(option.value)}
-                    className="sr-only"
-                  />
-                  <div className={cn(
-                    'status-switch w-12 h-6 rounded-full transition-all duration-300 relative cursor-pointer',
-                    formData.status === option.value 
-                      ? `bg-${option.color}-500` 
-                      : 'bg-gray-300'
-                  )}>
                     <div className={cn(
-                      'status-switch-knob w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all duration-300 shadow-sm',
-                      formData.status === option.value ? 'left-6' : 'left-0.5'
-                    )} />
+                      "font-bold text-sm",
+                      formData.status === option.value ? `text-${option.color}-700` : "text-gray-700"
+                    )}>
+                      {option.label}
+                    </div>
+                    <div className="text-xs text-gray-500">{option.description}</div>
+                  </div>
+                  <div className={cn(
+                    'w-4 h-4 rounded-full border-2 transition-all',
+                    formData.status === option.value 
+                      ? `bg-${option.color}-500 border-${option.color}-500` 
+                      : 'border-gray-300'
+                  )}>
+                    {formData.status === option.value && (
+                      <div className="w-full h-full bg-white rounded-full scale-50" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -109,39 +118,48 @@ export const StatusControl: React.FC<StatusControlProps> = ({
           </div>
         </div>
 
-        {/* Campos condicionais para EM MÁQUINA */}
+        {/* Campos condicionais para EM MÁQUINA - Enhanced */}
         {formData.status === 'em-maquina' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Settings className="w-4 h-4 inline mr-1" />
-                Máquina Atual
-              </label>
-              <select
-                value={formData.maquinaAtual || ''}
-                onChange={(e) => onUpdateFormData({ maquinaAtual: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              >
-                <option value="">Selecione a máquina...</option>
-                {MAQUINAS.map(maquina => (
-                  <option key={maquina} value={maquina}>
-                    Máquina {maquina}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Package2 className="w-4 h-4 inline mr-1" />
-                Produto sendo Produzido
-              </label>
-              <input
-                type="text"
-                value={formData.produtoProducao || ''}
-                onChange={(e) => onUpdateFormData({ produtoProducao: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-                placeholder="Ex: KRAFT 1/2 MIX"
-              />
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <h4 className="text-lg font-bold text-blue-900 mb-4 flex items-center">
+              <Settings className="w-5 h-5 mr-2" />
+              Configuração de Produção
+            </h4>
+            
+            <div className="space-y-6">
+              {/* Máquina */}
+              <div>
+                <label className="block text-sm font-bold text-blue-900 mb-3">
+                  Máquina Atual *
+                </label>
+                <select
+                  value={formData.maquinaAtual || ''}
+                  onChange={(e) => onUpdateFormData({ maquinaAtual: e.target.value })}
+                  className="w-full p-4 text-lg border-2 border-blue-300 rounded-xl bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                >
+                  <option value="">Selecione a máquina...</option>
+                  {MAQUINAS.map(maquina => (
+                    <option key={maquina} value={maquina}>
+                      Máquina {maquina}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Produto sendo Produzido - Enhanced com Selector */}
+              <div>
+                <label className="block text-sm font-bold text-blue-900 mb-3">
+                  Produto sendo Produzido *
+                </label>
+                <ProductSelector
+                  selectedProductId={formData.produtoProducaoId}
+                  onProductSelect={handleProductSelect}
+                  placeholder="Selecione o produto sendo produzido..."
+                />
+                <p className="text-xs text-blue-700 mt-2">
+                  Selecione o produto específico que está sendo fabricado com esta bobina
+                </p>
+              </div>
             </div>
           </div>
         )}

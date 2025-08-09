@@ -23,10 +23,13 @@ export const useNovaBobina = () => {
     dataEntrada: new Date().toISOString().split('T')[0],
     tipoPapel: '',
     gramatura: '',
+    largura: '',
     fornecedor: '',
     pesoInicial: 0,
     pesoAtual: 0,
     status: 'estoque',
+    produtoProducaoId: '',
+    produtoProducao: '',
     observacoes: ''
   })
 
@@ -106,10 +109,19 @@ export const useNovaBobina = () => {
     // Capturar frame do vídeo
     context.drawImage(video, 0, 0)
     
-    // Converter para blob
+    // Atualizar estado para mostrar imagem capturada
+    setCameraState(prev => ({ ...prev, hasImage: true, isActive: false }))
+    
+    // Parar stream da câmera
+    if (video.srcObject) {
+      const stream = video.srcObject as MediaStream
+      stream.getTracks().forEach(track => track.stop())
+      video.srcObject = null
+    }
+    
+    // Converter para blob para processamento
     canvas.toBlob(async (blob) => {
       if (blob) {
-        setCameraState(prev => ({ ...prev, hasImage: true }))
         updateStep(2)
         await processImage(blob)
       }
@@ -126,16 +138,19 @@ export const useNovaBobina = () => {
       // 🧠 ANÁLISE REAL VIA OPENAI VISION API
       const ocrResult = await analyzeBobonaImage(imageBlob)
       
-      // ✅ Log removido para console limpo
+      console.log('🔍 OCR Result completo:', ocrResult)
       
       // Converter resultado OCR para formato do frontend
       const processedBobinaData: ProcessedBobinaData = {
         codigo: ocrResult.codigo || `BOB-2025-${Date.now().toString().slice(-6)}`,
         tipoPapel: ocrResult.tipoPapel || 'KRAFT NATURAL',
         gramatura: ocrResult.gramatura || '38',
+        largura: ocrResult.largura?.toString() || '550',
         fornecedor: ocrResult.fornecedor || 'FORNECEDOR IDENTIFICADO',
         pesoInicial: ocrResult.pesoInicial || 150
       }
+      
+      console.log('📋 Processed Data:', processedBobinaData)
       
       setProcessedData(processedBobinaData)
       
@@ -144,6 +159,7 @@ export const useNovaBobina = () => {
         codigoBobina: processedBobinaData.codigo,
         tipoPapel: processedBobinaData.tipoPapel,
         gramatura: processedBobinaData.gramatura,
+        largura: processedBobinaData.largura,
         fornecedor: processedBobinaData.fornecedor,
         pesoInicial: processedBobinaData.pesoInicial,
         pesoAtual: processedBobinaData.pesoInicial, // Inicialmente igual
@@ -265,6 +281,8 @@ export const useNovaBobina = () => {
       pesoInicial: 0,
       pesoAtual: 0,
       status: 'estoque',
+      produtoProducaoId: '',
+      produtoProducao: '',
       observacoes: ''
     })
     

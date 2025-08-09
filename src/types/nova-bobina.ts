@@ -3,6 +3,7 @@ export interface ProcessedBobinaData {
   codigo: string
   tipoPapel: string
   gramatura: string
+  largura: string
   fornecedor: string
   pesoInicial: number
 }
@@ -12,6 +13,7 @@ export interface BobinaFormData {
   dataEntrada: string
   tipoPapel: string
   gramatura: string
+  largura: string
   fornecedor: string
   pesoInicial: number
   pesoAtual: number
@@ -19,6 +21,7 @@ export interface BobinaFormData {
   status: BobinaStatus
   maquinaAtual?: string
   produtoProducao?: string
+  produtoProducaoId?: string // ID do produto selecionado
   pesoSobra?: number
   obsSobra?: string
   observacoes: string
