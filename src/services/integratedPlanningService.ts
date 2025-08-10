@@ -1,7 +1,7 @@
 // Service Integrado - Planejamento Semanal + Maquinas + Pedidos
 // Sistema Soropel - Gestao de Producao Completa
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/config/supabase'
 import type {
   WeeklyPlanningComplete,
   PlannedOrderItem,
