@@ -100,46 +100,69 @@ class MachineConfigurationService {
     try {
       console.log(`Buscando pedidos para produto ${productId}...`)
 
-      const { data, error } = await supabase
+      // Buscar order_items para o produto
+      const { data: orderItems, error } = await supabase
         .from('order_items')
-        .select(`
-          id,
-          quantity,
-          order:orders!inner(
-            order_number,
-            priority,
-            delivery_date,
-            status,
-            customer:customers(name)
-          ),
-          product:products!inner(name)
-        `)
+        .select('id, quantity, order_id')
         .eq('product_id', productId)
-        .in('order.status', ['pending', 'in_production'])
-        .order('order.delivery_date', { ascending: true })
 
       if (error) {
-        throw new Error(`Erro ao buscar pedidos: ${error.message}`)
+        throw new Error(`Erro ao buscar order_items: ${error.message}`)
       }
 
-      // Transformar dados para formato esperado
-      const orders: OrderForMachine[] = (data || []).map(item => {
-        const deliveryDate = new Date(item.order.delivery_date)
-        const today = new Date()
-        const daysUntil = Math.ceil((deliveryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      const orders: OrderForMachine[] = []
 
-        return {
-          id: item.id,
-          order_number: item.order.order_number,
-          customer_name: item.order.customer?.name || 'Cliente não identificado',
-          product_name: item.product.name,
-          quantity: item.quantity,
-          priority: item.order.priority as 'urgente' | 'especial' | 'normal',
-          delivery_date: item.order.delivery_date,
-          status: item.order.status as 'pending' | 'in_production' | 'completed',
-          days_until_delivery: daysUntil
+      if (orderItems && orderItems.length > 0) {
+        // Buscar dados dos pedidos
+        for (const item of orderItems) {
+          try {
+            const { data: order } = await supabase
+              .from('orders')
+              .select(`
+                order_number,
+                priority,
+                delivery_date,
+                status,
+                customer_id
+              `)
+              .eq('id', item.order_id)
+              .in('status', ['pending', 'in_production'])
+              .single()
+
+            if (order) {
+              const { data: customer } = await supabase
+                .from('customers')
+                .select('name')
+                .eq('id', order.customer_id)
+                .single()
+
+              const { data: product } = await supabase
+                .from('products')
+                .select('name')
+                .eq('id', productId)
+                .single()
+
+              const deliveryDate = new Date(order.delivery_date)
+              const today = new Date()
+              const daysUntil = Math.ceil((deliveryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+              orders.push({
+                id: item.id,
+                order_number: order.order_number,
+                customer_name: customer?.name || 'Cliente não identificado',
+                product_name: product?.name || 'Produto',
+                quantity: item.quantity,
+                priority: order.priority as 'urgente' | 'especial' | 'normal',
+                delivery_date: order.delivery_date,
+                status: order.status as 'pending' | 'in_production' | 'completed',
+                days_until_delivery: daysUntil
+              })
+            }
+          } catch (orderError) {
+            console.warn('Erro ao buscar dados do pedido:', item.order_id, orderError)
+          }
         }
-      })
+      }
 
       console.log(`Pedidos encontrados: ${orders.length}`)
       return { success: true, data: orders }
@@ -175,14 +198,29 @@ class MachineConfigurationService {
           name,
           status,
           current_product,
-          capacity_per_hour,
-          current_bobina:bobinas(reel_number, paper_type)
+          capacity_per_hour
         `)
         .eq('id', machineId)
         .single()
 
       if (machineError) {
         throw new Error(`Erro ao buscar máquina: ${machineError.message}`)
+      }
+
+      // Buscar bobina atual separadamente se necessário
+      let currentBobina = null
+      try {
+        const { data: bobina } = await supabase
+          .from('bobinas')
+          .select('reel_number, paper_type')
+          .eq('machine_id', machineId)
+          .eq('status', 'active')
+          .single()
+        
+        currentBobina = bobina
+      } catch (error) {
+        // Bobina não encontrada ou múltiplas - não é erro crítico
+        console.log('Bobina atual não encontrada ou múltiplas para máquina:', machineId)
       }
 
       // Buscar produto atual se houver
@@ -197,47 +235,62 @@ class MachineConfigurationService {
         currentProduct = product
       }
 
-      // Buscar pedidos atribuídos à máquina
-      const { data: orderItems, error: ordersError } = await supabase
-        .from('order_items')
-        .select(`
-          id,
-          quantity,
-          planned_machine_id,
-          order:orders!inner(
-            order_number,
-            priority,
-            delivery_date,
-            status,
-            customer:customers(name)
-          ),
-          product:products!inner(name)
-        `)
-        .eq('planned_machine_id', machineId)
-        .in('order.status', ['pending', 'in_production'])
+      // Buscar pedidos atribuídos à máquina de forma simplificada
+      let assignedOrders: OrderForMachine[] = []
+      
+      try {
+        const { data: orderItems } = await supabase
+          .from('order_items')
+          .select('id, quantity, order_id, product_id')
+          .eq('planned_machine_id', machineId)
 
-      if (ordersError) {
-        console.warn('Erro ao buscar pedidos da máquina:', ordersError)
-      }
+        if (orderItems && orderItems.length > 0) {
+          // Buscar dados dos pedidos separadamente
+          for (const item of orderItems) {
+            try {
+              const { data: order } = await supabase
+                .from('orders')
+                .select(`
+                  order_number,
+                  priority,
+                  delivery_date,
+                  status,
+                  customer:customers(name)
+                `)
+                .eq('id', item.order_id)
+                .single()
 
-      // Transformar pedidos
-      const assignedOrders: OrderForMachine[] = (orderItems || []).map(item => {
-        const deliveryDate = new Date(item.order.delivery_date)
-        const today = new Date()
-        const daysUntil = Math.ceil((deliveryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+              const { data: product } = await supabase
+                .from('products')
+                .select('name')
+                .eq('id', item.product_id)
+                .single()
 
-        return {
-          id: item.id,
-          order_number: item.order.order_number,
-          customer_name: item.order.customer?.name || 'Cliente não identificado',
-          product_name: item.product.name,
-          quantity: item.quantity,
-          priority: item.order.priority as 'urgente' | 'especial' | 'normal',
-          delivery_date: item.order.delivery_date,
-          status: item.order.status as 'pending' | 'in_production' | 'completed',
-          days_until_delivery: daysUntil
+              if (order && product) {
+                const deliveryDate = new Date(order.delivery_date)
+                const today = new Date()
+                const daysUntil = Math.ceil((deliveryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+                assignedOrders.push({
+                  id: item.id,
+                  order_number: order.order_number,
+                  customer_name: order.customer?.name || 'Cliente não identificado',
+                  product_name: product.name,
+                  quantity: item.quantity,
+                  priority: order.priority as 'urgente' | 'especial' | 'normal',
+                  delivery_date: order.delivery_date,
+                  status: order.status as 'pending' | 'in_production' | 'completed',
+                  days_until_delivery: daysUntil
+                })
+              }
+            } catch (error) {
+              console.warn('Erro ao buscar dados do pedido:', item.id, error)
+            }
+          }
         }
-      })
+      } catch (error) {
+        console.warn('Erro ao buscar pedidos da máquina:', error)
+      }
 
       const configuration: MachineConfiguration = {
         machine_id: machine.id,
@@ -246,7 +299,8 @@ class MachineConfigurationService {
         assigned_orders: assignedOrders,
         production_goal: machine.capacity_per_hour * 8, // 8 horas padrão
         efficiency_target: 85, // Meta padrão
-        status: this.mapMachineStatus(machine.status)
+        status: this.mapMachineStatus(machine.status),
+        notes: `Bobina atual: ${currentBobina?.reel_number || 'Não identificada'}`
       }
 
       return { success: true, data: configuration }
