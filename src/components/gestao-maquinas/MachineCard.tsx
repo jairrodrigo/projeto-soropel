@@ -11,7 +11,8 @@ import {
   Activity,
   User,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  Calendar
 } from 'lucide-react'
 import { cn } from '@/utils'
 import type { MachineCardProps, MachineStatus } from '@/types/gestao-maquinas'
@@ -131,6 +132,47 @@ export const MachineCard: React.FC<MachineCardProps> = ({
               <div className="font-semibold text-gray-800">{machine.bobina.numero}</div>
               <div className="text-sm text-gray-600">
                 {machine.bobina.tipo} • {machine.bobina.peso}kg
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Planejamento Semanal - Nova Seção */}
+        {machine.plannedOrders && machine.plannedOrders.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Calendar className="w-4 h-4 text-purple-600" />
+              <span className="text-sm text-gray-600 font-medium">Planejamento Semanal:</span>
+            </div>
+            
+            <div className="bg-purple-50 p-3 rounded border border-purple-200 space-y-2">
+              {machine.plannedOrders.slice(0, 3).map((order, index) => (
+                <div key={order.order_id} className="flex justify-between items-center text-xs">
+                  <div>
+                    <span className="font-medium">#{order.order_number}</span>
+                    <span className="text-gray-600 ml-1">- {order.client_name}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">{order.quantity}un</div>
+                    <div className={cn(
+                      "text-xs",
+                      order.days_until_delivery <= 3 ? "text-red-600" : "text-gray-500"
+                    )}>
+                      {order.delivery_date}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {machine.plannedOrders.length > 3 && (
+                <div className="text-xs text-gray-500 text-center pt-1 border-t border-purple-200">
+                  +{machine.plannedOrders.length - 3} pedidos adicionais
+                </div>
+              )}
+              
+              <div className="flex justify-between text-xs font-medium pt-2 border-t border-purple-200">
+                <span>Meta Semanal:</span>
+                <span>{machine.weeklyProgress || 0}/{machine.weeklyTarget || 0}</span>
               </div>
             </div>
           </div>

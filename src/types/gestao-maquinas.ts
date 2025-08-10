@@ -30,6 +30,30 @@ export interface Machine {
     quantidade: number
     progresso: number
   }
+  // Planejamento semanal integrado
+  plannedOrders?: PlannedOrderItem[]
+  weeklyTarget?: number
+  weeklyProgress?: number
+  onSchedule?: boolean
+  alerts?: MachineAlert[]
+}
+
+export interface PlannedOrderItem {
+  order_id: string
+  order_number: string
+  client_name: string
+  product_name: string
+  quantity: number
+  delivery_date: string
+  priority: 'urgente' | 'especial' | 'normal'
+  days_until_delivery: number
+  progress_percentage: number
+}
+
+export interface MachineAlert {
+  type: 'overload' | 'behind_schedule' | 'urgent_order' | 'maintenance_due'
+  message: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
 }
 
 export interface PlanejamentoSemanal {

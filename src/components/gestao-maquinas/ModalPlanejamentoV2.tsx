@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react'
-import { X, Calendar, Target, TrendingUp, Package, AlertCircle, Save, ChevronLeft, ChevronRight, Clock, CheckCircle, AlertTriangle, Plus, Trash2, Copy, Filter } from 'lucide-react'
-import { weeklyPlanningService, OrderForPlanning } from '../../services/weeklyPlanningService'
+import { 
+  X, 
+  Calendar, 
+  Target, 
+  TrendingUp, 
+  Package, 
+  AlertCircle, 
+  Save, 
+  ChevronLeft, 
+  ChevronRight, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle, 
+  Plus, 
+  Trash2, 
+  Copy, 
+  Filter,
+  Users,
+  ArrowRight
+} from 'lucide-react'
+import { useProductionPlanningStore } from '@/stores/productionPlanningStore'
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -22,21 +41,88 @@ interface MachinePlanning {
 }
 
 export const ModalPlanejamentoV2: React.FC<ModalPlanejamentoProps> = ({ isOpen, onClose }) => {
+  const {
+    currentWeek,
+    machines,
+    availableOrders,
+    loading,
+    error,
+    dragDropData,
+    setCurrentWeek,
+    loadWeeklyPlanning,
+    moveOrderToMachine,
+    savePlanningAndSync,
+    setDraggedOrder,
+    handleDropOrder,
+    validatePlanning
+  } = useProductionPlanningStore()
+
   const [selectedWeek, setSelectedWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }))
-  const [machinePlans, setMachinePlans] = useState<MachinePlanning[]>([])
-  const [availableOrders, setAvailableOrders] = useState<OrderForPlanning[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState<'planning' | 'overview'>('planning')
-  const [selectedMachine, setSelectedMachine] = useState<string | null>(null)
   const [filterPriority, setFilterPriority] = useState<'all' | 'urgente' | 'especial' | 'normal'>('all')
-  
+  const [saving, setSaving] = useState(false)
+
   // Carregar dados ao abrir modal
   useEffect(() => {
     if (isOpen) {
-      loadWeekData()
+      const weekStart = format(selectedWeek, 'yyyy-MM-dd')
+      setCurrentWeek(weekStart)
+      loadWeeklyPlanning(weekStart)
     }
   }, [isOpen, selectedWeek])
+
+  // Navegação de semanas
+  const handlePreviousWeek = () => {
+    setSelectedWeek(prev => subWeeks(prev, 1))
+  }
+
+  const handleNextWeek = () => {
+    setSelectedWeek(prev => addWeeks(prev, 1))
+  }
+
+  // Filtrar pedidos por prioridade
+  const filteredOrders = availableOrders.filter(order => {
+    if (filterPriority === 'all') return true
+    return order.priority === filterPriority
+  })
+
+  // Drag and Drop handlers
+  const handleDragStart = (order: any, e: React.DragEvent) => {
+    setDraggedOrder(order)
+    e.dataTransfer.setData('application/json', JSON.stringify(order))
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = async (machineId: string, e: React.DragEvent) => {
+    e.preventDefault()
+    
+    try {
+      const orderData = JSON.parse(e.dataTransfer.getData('application/json'))
+      await handleDropOrder(orderData.id, machineId)
+    } catch (error) {
+      console.error('Erro no drop:', error)
+    }
+  }
+
+  // Salvar planejamento
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await savePlanningAndSync()
+      onClose()
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Validação do planejamento
+  const validation = validatePlanning()
+
+  if (!isOpen) return null
 
   const loadWeekData = async () => {
     setLoading(true)
