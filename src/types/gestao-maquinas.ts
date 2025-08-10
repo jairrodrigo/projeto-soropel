@@ -18,6 +18,18 @@ export interface Machine {
   operatingHours: number
   operator?: string
   type: 'no_print' | 'with_print' | 'special'
+  // Dados integrados do banco
+  bobina?: {
+    numero: string
+    tipo: string
+    peso: string
+  }
+  pedidoAtivo?: {
+    numero: string
+    produto: string
+    quantidade: number
+    progresso: number
+  }
 }
 
 export interface PlanejamentoSemanal {

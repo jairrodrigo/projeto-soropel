@@ -39,6 +39,13 @@ export const GestaoMaquinasPage: React.FC = () => {
 
   useEffect(() => {
     refreshData()
+    
+    // Auto-refresh a cada 30 segundos para dados em tempo real
+    const interval = setInterval(() => {
+      refreshData()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [refreshData])
 
   const handleToggleStatus = (machineId: number, currentStatus: any) => {
@@ -110,160 +117,123 @@ export const GestaoMaquinasPage: React.FC = () => {
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             
-            {/* Título e Descrição - Typography Enhanced */}
-            <div className="text-center lg:text-left">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3 lg:mb-4 leading-tight">
+            {/* Título e Descrição - Simple & Clean */}
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">
                 Gestão de Máquinas
               </h1>
-              <p className="text-gray-600 text-sm sm:text-base lg:text-lg xl:text-xl max-w-2xl lg:max-w-none mx-auto lg:mx-0 leading-relaxed">
-                Controle e monitoramento em tempo real das 9 máquinas de produção
+              <p className="text-gray-600 text-lg">
+                Controle e monitoramento das 9 máquinas de produção
               </p>
             </div>
             
-            {/* Botões de Ação - Enhanced Visual */}
+            {/* Botões de Ação - Simple & Functional */}
             <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3">
               
-              {/* Botão Atualizar - Modern Style */}
+              {/* Botão Atualizar */}
               <button
                 onClick={handleRefresh}
-                className="w-full sm:w-auto bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 lg:px-6 py-3 lg:py-4 rounded-xl font-semibold text-sm lg:text-base transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-300 flex items-center justify-center space-x-2"
               >
-                <RefreshCw className="w-4 h-4 lg:w-5 lg:h-5" />
+                <RefreshCw className="w-4 h-4" />
                 <span>Atualizar</span>
               </button>
               
-              {/* Botão Planejamento - Enhanced */}
-              <div className="relative group">
-                <button
-                  onClick={handlePlanejamento}
-                  className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 lg:px-6 py-3 lg:py-4 rounded-xl font-semibold text-sm lg:text-base transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  <Calendar className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span>Planejar Semana</span>
-                </button>
-                
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-black text-white text-xs lg:text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10 shadow-xl">
-                  Planejamento Semanal<br/>
-                  Seleciona pedidos e distribui nas máquinas
-                </div>
-              </div>
+              {/* Botão Planejamento */}
+              <button
+                onClick={handlePlanejamento}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-300 flex items-center space-x-2 shadow-lg"
+              >
+                <Calendar className="w-5 h-5" />
+                <span>Planejar Semana</span>
+              </button>
               
-              {/* Botão Produtos - Enhanced */}
-              <div className="relative group">
-                <button
-                  onClick={handleConfigurarProdutos}
-                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 lg:px-6 py-3 lg:py-4 rounded-xl font-semibold text-sm lg:text-base transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span>Configurar Produtos</span>
-                </button>
-                
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-black text-white text-xs lg:text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10 shadow-xl">
-                  Configuração de Produtos<br/>
-                  Define produtos por máquina (1-4: Sem impressão | 5-8: Com impressão | 9: Especial)
-                </div>
-              </div>
+              {/* Botão Produtos */}
+              <button
+                onClick={handleConfigurarProdutos}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-300 flex items-center space-x-2 shadow-lg"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Configurar Produtos</span>
+              </button>
 
-              {/* Botão IoT - Enhanced */}
-              <div className="relative group">
-                <button
-                  onClick={handleConfigurarIoT}
-                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 lg:px-6 py-3 lg:py-4 rounded-xl font-semibold text-sm lg:text-base transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  <Wifi className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span>Sistema IoT</span>
-                </button>
-                
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-2 bg-black text-white text-xs lg:text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10 shadow-xl">
-                  Sistema IoT ESP32<br/>
-                  Configurar contadores de sacos em tempo real
-                </div>
+              {/* Botão IoT */}
+              <button
+                onClick={handleConfigurarIoT}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-300 flex items-center space-x-2 shadow-lg"
+              >
+                <Wifi className="w-5 h-5" />
+                <span>Sistema IoT</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Cards de Métricas - Simple & Clean */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          
+          {/* Máquinas Ativas */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Máquinas Ativas</p>
+                <p className="text-3xl font-bold text-green-600">{metrics.totalActive}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <Play className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Máquinas Paradas */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Máquinas Paradas</p>
+                <p className="text-3xl font-bold text-red-600">{metrics.totalStopped}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Pause className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Em Manutenção */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Em Manutenção</p>
+                <p className="text-3xl font-bold text-yellow-600">{metrics.totalMaintenance}</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Wrench className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Eficiência Média */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm">Eficiência Média</p>
+                <p className="text-3xl font-bold text-blue-600">{Math.round(metrics.averageEfficiency)}%</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Cards de Métricas - Enhanced Design */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
-          
-          {/* Máquinas Ativas - Modern Card */}
-          <div className="bg-white p-4 lg:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-xs lg:text-sm font-medium">Máquinas Ativas</p>
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
-                  {metrics.totalActive}
-                </p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-green-100 to-green-200 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Play className="w-5 h-5 lg:w-6 lg:h-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-          
-          {/* Máquinas Paradas - Modern Card */}
-          <div className="bg-white p-4 lg:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-xs lg:text-sm font-medium">Máquinas Paradas</p>
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
-                  {metrics.totalStopped}
-                </p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-red-100 to-red-200 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Pause className="w-5 h-5 lg:w-6 lg:h-6 text-red-600" />
-              </div>
-            </div>
-          </div>
-          
-          {/* Em Manutenção - Modern Card */}
-          <div className="bg-white p-4 lg:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-xs lg:text-sm font-medium">Em Manutenção</p>
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                  {metrics.totalMaintenance}
-                </p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-yellow-100 to-orange-200 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Wrench className="w-5 h-5 lg:w-6 lg:h-6 text-yellow-600" />
-              </div>
-            </div>
-          </div>
-          
-          {/* Eficiência Média - Modern Card */}
-          <div className="bg-white p-4 lg:p-6 rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-xs lg:text-sm font-medium">Eficiência Média</p>
-                <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {Math.round(metrics.averageEfficiency)}%
-                </p>
-              </div>
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-blue-100 to-purple-200 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid das Máquinas - Enhanced Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-          {machines.map((machine, index) => (
-            <div 
-              key={machine.id} 
-              className="animate-fadeIn opacity-0"
-              style={{ 
-                animationDelay: `${index * 100}ms`,
-                animationFillMode: 'forwards'
-              }}
-            >
-              <MachineCard
-                machine={machine}
-                onToggleStatus={handleToggleStatus}
-                onOpenConfig={handleOpenConfig}
-              />
-            </div>
+        {/* Grid das Máquinas - Simple Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {machines.map((machine) => (
+            <MachineCard
+              key={machine.id}
+              machine={machine}
+              onToggleStatus={handleToggleStatus}
+              onOpenConfig={handleOpenConfig}
+            />
           ))}
         </div>
 

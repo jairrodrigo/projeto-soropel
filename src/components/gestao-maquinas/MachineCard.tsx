@@ -94,24 +94,22 @@ export const MachineCard: React.FC<MachineCardProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group overflow-hidden">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
       
-      {/* Header com Status - Enhanced */}
-      <div className="p-4 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+      {/* Header com Status */}
+      <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
-            <div className={cn("w-3 h-3 rounded-full shadow-lg animate-pulse", statusConfig.dotClass)} />
-            <h3 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              {machine.name}
-            </h3>
+            <div className={cn("w-3 h-3 rounded-full", statusConfig.dotClass)} />
+            <h3 className="text-lg font-semibold text-gray-800">{machine.name}</h3>
           </div>
           
-          <div className="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full shadow-sm">
+          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
             {getMachineTypeLabel(machine.type)}
           </div>
         </div>
         
-        <div className={cn("inline-flex items-center px-3 py-2 rounded-full text-xs font-bold shadow-sm", statusConfig.bgClass)}>
+        <div className={cn("inline-block px-3 py-1 rounded text-xs font-medium", statusConfig.bgClass)}>
           {machine.status === 'active' && 'ATIVA'}
           {machine.status === 'stopped' && 'PARADA'}
           {machine.status === 'maintenance' && 'MANUTENÇÃO'}
@@ -119,109 +117,130 @@ export const MachineCard: React.FC<MachineCardProps> = ({
         </div>
       </div>
 
-      {/* Conteúdo Principal - Enhanced */}
-      <div className="p-4 lg:p-6">
+      {/* Conteúdo Principal - Com Dados Reais */}
+      <div className="p-6">
         
-        {/* Produto Atual - Modern Design */}
-        <div className="mb-4 lg:mb-6">
-          <div className="flex items-center space-x-2 mb-3">
-            <Package className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600" />
-            <span className="text-sm lg:text-base text-gray-600 font-semibold">Produto Atual:</span>
+        {/* Bobina Atual - Dados Reais */}
+        {machine.bobina && (
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Package className="w-4 h-4 text-blue-600" />
+              <span className="text-sm text-gray-600 font-medium">Bobina Atual:</span>
+            </div>
+            <div className="bg-blue-50 p-3 rounded border border-blue-200">
+              <div className="font-semibold text-gray-800">{machine.bobina.numero}</div>
+              <div className="text-sm text-gray-600">
+                {machine.bobina.tipo} • {machine.bobina.peso}kg
+              </div>
+            </div>
           </div>
-          <div className="font-bold text-gray-800 bg-gradient-to-r from-gray-50 to-blue-50 p-3 lg:p-4 rounded-xl border border-blue-100 shadow-sm">
+        )}
+
+        {/* Produto Atual - Dados Reais */}
+        <div className="mb-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Package className="w-4 h-4 text-green-600" />
+            <span className="text-sm text-gray-600 font-medium">Produto:</span>
+          </div>
+          <div className="font-semibold text-gray-800 bg-gray-50 p-3 rounded border">
             {machine.currentProduct}
           </div>
+          {machine.pedidoAtivo && (
+            <div className="text-xs text-gray-500 mt-1">
+              Pedido: {machine.pedidoAtivo.numero}
+            </div>
+          )}
         </div>
 
-        {/* Progresso - Enhanced Visual */}
-        <div className="mb-4 lg:mb-6">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm lg:text-base text-gray-600 font-semibold">Progresso:</span>
-            <span className={cn("text-sm lg:text-base font-bold", getEfficiencyColor(machine.progress))}>
+        {/* Progresso - Real do Banco */}
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm text-gray-600 font-medium">Progresso:</span>
+            <span className={cn("text-sm font-bold", getEfficiencyColor(machine.progress))}>
               {machine.progress}%
             </span>
           </div>
           
-          <div className="h-3 lg:h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className={cn("h-full rounded-full transition-all duration-1000 shadow-sm", getProgressColor(machine.progress))}
+              className={cn("h-full rounded-full transition-all duration-500", getProgressColor(machine.progress))}
               style={{ width: `${machine.progress}%` }}
             />
           </div>
           
-          <div className="text-xs lg:text-sm text-gray-600 mt-3 flex justify-between font-medium">
+          <div className="text-sm text-gray-600 mt-2 flex justify-between">
             <span>{formatNumber(machine.currentProduction)} unidades</span>
             <span>Meta: {formatNumber(machine.targetProduction)}</span>
           </div>
         </div>
 
-        {/* Métricas - Enhanced Design */}
-        <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
-          <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 lg:p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+        {/* Métricas - Simple & Clean */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-gray-50 p-3 rounded border">
             <div className="flex items-center space-x-2">
-              <Activity className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600" />
+              <Activity className="w-4 h-4 text-gray-500" />
               <div>
-                <p className="text-xs lg:text-sm text-gray-600 font-medium">Eficiência</p>
-                <p className={cn("text-sm lg:text-base font-bold", getEfficiencyColor(machine.efficiency))}>
+                <p className="text-xs text-gray-600">Eficiência</p>
+                <p className={cn("text-sm font-bold", getEfficiencyColor(machine.efficiency))}>
                   {machine.efficiency}%
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-gray-50 to-green-50 p-3 lg:p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <div className="bg-gray-50 p-3 rounded border">
             <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-green-600" />
+              <Clock className="w-4 h-4 text-gray-500" />
               <div>
-                <p className="text-xs lg:text-sm text-gray-600 font-medium">Tempo Rest.</p>
-                <p className="text-sm lg:text-base font-bold text-gray-800">{machine.timeRemaining}</p>
+                <p className="text-xs text-gray-600">Tempo Rest.</p>
+                <p className="text-sm font-bold text-gray-800">{machine.timeRemaining}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Operador - Enhanced */}
+        {/* Operador */}
         {machine.operator && (
-          <div className="mb-4 lg:mb-6">
-            <div className="flex items-center space-x-2 bg-gradient-to-r from-gray-50 to-purple-50 p-3 lg:p-4 rounded-xl border border-purple-100 shadow-sm">
-              <User className="w-4 h-4 lg:w-5 lg:h-5 text-purple-600" />
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded border">
+              <User className="w-4 h-4 text-gray-500" />
               <div>
-                <span className="text-xs lg:text-sm text-gray-600 font-medium">Operador:</span>
-                <span className="text-sm lg:text-base font-bold text-gray-800 ml-2">{machine.operator}</span>
+                <span className="text-xs text-gray-600">Operador:</span>
+                <span className="text-sm font-semibold text-gray-800 ml-2">{machine.operator}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Botões de Ação - Enhanced */}
+        {/* Botões de Ação - Simple */}
         <div className="flex items-center space-x-3">
           <button
             onClick={handleToggle}
             disabled={machine.status === 'maintenance'}
             className={cn(
-              "flex-1 flex items-center justify-center space-x-2 px-4 py-3 lg:py-4 rounded-xl font-bold text-sm lg:text-base transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1",
+              "flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-semibold text-sm transition-colors duration-300",
               statusConfig.buttonClass
             )}
           >
-            <ButtonIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+            <ButtonIcon className="w-4 h-4" />
             <span>{statusConfig.buttonText}</span>
           </button>
           
           <button
             onClick={() => onOpenConfig(machine.id)}
-            className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-4 py-3 lg:py-4 rounded-xl font-bold text-sm lg:text-base transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors duration-300 flex items-center space-x-2"
           >
-            <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
+            <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">CONFIG</span>
           </button>
         </div>
       </div>
 
-      {/* Alerta de Eficiência - Enhanced */}
+      {/* Alerta de Eficiência */}
       {machine.efficiency < 70 && machine.status === 'active' && (
         <div className="absolute top-3 right-3">
-          <div className="w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-full flex items-center justify-center border-2 border-yellow-300 shadow-lg animate-pulse">
-            <AlertTriangle className="w-3 h-3 lg:w-4 lg:h-4 text-yellow-600" />
+          <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center border border-yellow-300">
+            <AlertTriangle className="w-3 h-3 text-yellow-600" />
           </div>
         </div>
       )}

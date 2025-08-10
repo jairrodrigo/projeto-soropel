@@ -136,7 +136,7 @@ const convertSupabaseMachineToFrontend = (
 // Service principal
 export class MachinesService {
   /**
-   * Buscar todas as máquinas com status
+   * Buscar todas as máquinas com status, bobinas e pedidos integrados
    */
   static async getMachines(): Promise<Machine[]> {
     if (!checkSupabaseAvailable()) {
@@ -145,10 +145,25 @@ export class MachinesService {
     }
 
     try {
-      // Buscar máquinas
+      // Buscar máquinas com dados relacionados
       const { data: machines, error: machinesError } = await supabase
         .from('machines')
-        .select('*')
+        .select(`
+          *,
+          bobinas:bobinas!machines_current_bobina_id_fkey(
+            reel_number,
+            paper_type,
+            current_weight,
+            product_in_production
+          ),
+          current_order:order_items!order_items_machine_id_fkey(
+            quantity,
+            progress_percentage,
+            status,
+            order:orders(order_number),
+            product:products(name)
+          )
+        `)
         .order('machine_number')
 
       if (machinesError) {
@@ -164,13 +179,16 @@ export class MachinesService {
         console.warn('Erro ao buscar status das máquinas:', statusError.message)
       }
 
-      // Combinar dados
+      // Combinar dados com informações reais
       const result = machines.map(machine => {
         const status = machineStatuses?.find(s => s.machine_id === machine.id)
-        return convertSupabaseMachineToFrontend(machine, status)
+        const currentOrder = machine.current_order?.find(o => o.status === 'producao')
+        const bobina = machine.bobinas?.[0]
+        
+        return convertSupabaseMachineToFrontend(machine, status, currentOrder, bobina)
       })
 
-      console.log(`✅ Carregadas ${result.length} máquinas do Supabase`)
+      console.log(`✅ Carregadas ${result.length} máquinas com dados integrados do Supabase`)
       return result
 
     } catch (error) {
