@@ -369,10 +369,10 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
                     
                     <div className="grid grid-cols-2 gap-4">
                       {[
-                        { value: 'active', label: 'Ativa', icon: Play, color: 'green' },
-                        { value: 'stopped', label: 'Parada', icon: Pause, color: 'red' },
-                        { value: 'maintenance', label: 'Manutenção', icon: Wrench, color: 'yellow' },
-                        { value: 'waiting', label: 'Aguardando', icon: Clock, color: 'blue' }
+                        { value: 'active', label: 'Ativa', icon: Play, colorClass: 'border-green-500 bg-green-50' },
+                        { value: 'stopped', label: 'Parada', icon: Pause, colorClass: 'border-red-500 bg-red-50' },
+                        { value: 'maintenance', label: 'Manutenção', icon: Wrench, colorClass: 'border-yellow-500 bg-yellow-50' },
+                        { value: 'waiting', label: 'Aguardando', icon: Clock, colorClass: 'border-blue-500 bg-blue-50' }
                       ].map(status => (
                         <div
                           key={status.value}
@@ -380,7 +380,7 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
                           className={cn(
                             'p-4 border-2 rounded-lg cursor-pointer transition-all flex items-center gap-3',
                             newStatus === status.value
-                              ? `border-${status.color}-500 bg-${status.color}-50`
+                              ? status.colorClass
                               : 'border-gray-200 hover:border-gray-300'
                           )}
                         >
