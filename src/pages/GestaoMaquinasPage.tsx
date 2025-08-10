@@ -15,6 +15,7 @@ import {
   Factory
 } from 'lucide-react'
 import { MachineCard } from '@/components/gestao-maquinas/MachineCard'
+import { NotificationBadge } from '@/components/gestao-maquinas/NotificationBadge'
 import { ModalPlanejamentoV2 } from '@/components/gestao-maquinas/ModalPlanejamentoV2'
 import { ModalConfigurarProdutos } from '@/components/gestao-maquinas/ModalConfigurarProdutos'
 import { ModalConfiguracaoMaquina } from '@/components/gestao-maquinas/ModalConfiguracaoMaquina'
@@ -28,6 +29,7 @@ export const GestaoMaquinasPage: React.FC = () => {
     loading,
     error,
     modals,
+    notifications,
     refreshData,
     updateMachineStatus,
     openModal,
@@ -276,6 +278,15 @@ export const GestaoMaquinasPage: React.FC = () => {
         <ModalIoTSystem 
           isOpen={modals.iotSystem}
           onClose={() => closeModal('iotSystem')}
+        />
+
+        {/* Notificações de Bobinas - Nova Bobina → Máquinas */}
+        <NotificationBadge 
+          notifications={notifications || []}
+          onDismiss={(index) => {
+            // Opcional: remover notificação específica
+            console.log(`Notificação ${index} dispensada`)
+          }}
         />
       </div>
     </div>

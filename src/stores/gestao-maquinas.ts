@@ -1,9 +1,10 @@
 // Store Zustand para Gestão de Máquinas - Sistema Soropel
-// Integrado com Supabase real
+// Integrado com Supabase real + Notificações Nova Bobina
 
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { MachinesService } from '@/services/machinesService'
+import { getMachineNotifications } from '@/services/machineNotificationService'
 import type { 
   Machine, 
   MachineStatus, 
@@ -19,6 +20,7 @@ interface GestaoMaquinasState {
   // Estado das máquinas
   machines: Machine[]
   selectedMachine?: Machine
+  notifications: string[] // Notificações de bobinas
   
   // Estado dos modals
   modals: ModalState
@@ -66,6 +68,7 @@ export const useGestaoMaquinasStore = create<GestaoMaquinasState>()(
   devtools((set, get) => ({
     // Estado inicial
     machines: [],
+    notifications: [], // Inicializar array de notificações
     modals: {
       planejamento: false,
       configurarProdutos: false,
@@ -226,15 +229,34 @@ export const useGestaoMaquinasStore = create<GestaoMaquinasState>()(
       }
     },
 
-    // Refresh data - INTEGRAÇÃO REAL SUPABASE
+    // Refresh data - INTEGRAÇÃO REAL SUPABASE + NOTIFICAÇÕES BOBINAS
     refreshData: async () => {
       set({ loading: true, error: null })
       try {
-        // Usar dados reais do Supabase via MachinesService
+        // Usar dados reais do Supabase via MachinesService (já integrado com bobinas)
         const machines = await MachinesService.getMachines()
         
-        set({ machines, loading: false })
-        console.log(`✅ ${machines.length} máquinas carregadas do Supabase`)
+        // Verificar notificações de bobinas para cada máquina
+        const notifications: string[] = []
+        for (const machine of machines) {
+          const machineNotifications = await getMachineNotifications(machine.id.toString())
+          if (machineNotifications.length > 0) {
+            const latest = machineNotifications[0]
+            const timeAgo = new Date(latest.timestamp).toLocaleTimeString('pt-BR')
+            notifications.push(
+              `Máquina ${machine.id}: Nova bobina ${latest.bobinaNumero} atribuída (${timeAgo})`
+            )
+          }
+        }
+        
+        set({ 
+          machines, 
+          loading: false,
+          notifications
+        })
+        
+        console.log(`✅ ${machines.length} máquinas carregadas + ${notifications.length} notificações`)
+        
       } catch (error) {
         console.error('Erro ao carregar máquinas:', error)
         set({ 

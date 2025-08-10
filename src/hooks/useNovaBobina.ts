@@ -9,9 +9,10 @@ import type {
 } from '@/types/nova-bobina'
 import { TIPOS_PAPEL, FORNECEDORES, GRAMATURAS } from '@/types/nova-bobina'
 
-// 🤖 SERVICES REAIS - OCR + SUPABASE
+// 🤖 SERVICES REAIS - OCR + SUPABASE + MACHINE NOTIFICATIONS
 import { analyzeBobonaImage } from '@/services/ocrService'
 import { upsertBobina, testBobinaConnection } from '@/services/bobinasService'
+import { notifyMachineAssignment, notifyMachineRemoval } from '@/services/machineNotificationService'
 import type { NewBobinaData } from '@/services/bobinasService'
 
 export const useNovaBobina = () => {
@@ -213,7 +214,7 @@ export const useNovaBobina = () => {
     setFormState(prev => ({ ...prev, currentStep: step }))
   }, [])
 
-  // 💾 SALVAR BOBINA REAL NO SUPABASE
+  // 💾 SALVAR BOBINA REAL NO SUPABASE + NOTIFICAR MÁQUINAS
   const saveBobina = useCallback(async () => {
     if (!formData.codigoBobina) {
       showNotification({
@@ -254,7 +255,34 @@ export const useNovaBobina = () => {
         throw new Error(result.error)
       }
       
-      // ✅ Bobina salva - log removido para console limpo
+      // 🔔 NOTIFICAR MÁQUINA SE BOBINA FOR ATRIBUÍDA
+      if (formData.status === 'em-maquina' && formData.maquinaAtual && result.data?.id) {
+        const notificationSuccess = await notifyMachineAssignment(
+          formData.maquinaAtual,
+          {
+            id: result.data.id,
+            codigo: formData.codigoBobina,
+            produto: formData.produtoProducao
+          }
+        )
+        
+        if (notificationSuccess) {
+          showNotification({
+            message: `✅ Bobina salva e Máquina ${formData.maquinaAtual} notificada!`,
+            type: 'success'
+          })
+        } else {
+          showNotification({
+            message: `✅ Bobina salva, mas falha na notificação da máquina`,
+            type: 'warning'
+          })
+        }
+      } else {
+        showNotification({
+          message: '✅ Bobina salva com sucesso!',
+          type: 'success'
+        })
+      }
       
       return true
       
