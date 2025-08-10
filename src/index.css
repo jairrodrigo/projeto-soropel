@@ -44,7 +44,7 @@
   }
 }
 
-/* Custom animations */
+/* Custom animations - Enhanced for Modern UI */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -60,6 +60,16 @@
   50% { opacity: 0.7; }
 }
 
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 .fade-in {
   animation: fadeIn 0.5s ease-in;
 }
@@ -72,6 +82,18 @@
   animation: pulse 2s infinite;
 }
 
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out;
+}
+
 /* Metric card hover effects */
 .metric-card {
   transition: all 0.3s ease;
@@ -82,25 +104,33 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* Machine status colors */
+/* Enhanced Machine status colors - Modern Gradient Styles */
 .status-online { 
-  background-color: #dcfce7; 
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
   color: #166534; 
+  border: 1px solid #a7f3d0;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
 }
 
 .status-offline { 
-  background-color: #fecaca; 
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
   color: #991b1b; 
+  border: 1px solid #f87171;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 .status-maintenance { 
-  background-color: #fef3c7; 
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   color: #92400e; 
+  border: 1px solid #facc15;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
 }
 
 .status-idle { 
-  background-color: #e0e7ff; 
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
   color: #3730a3; 
+  border: 1px solid #a5b4fc;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
 /* Sidebar animations */
