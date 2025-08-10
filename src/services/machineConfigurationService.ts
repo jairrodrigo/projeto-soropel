@@ -197,8 +197,7 @@ class MachineConfigurationService {
           machine_number,
           name,
           status,
-          current_product,
-          capacity_per_hour
+          current_product
         `)
         .eq('id', machineId)
         .single()
@@ -297,7 +296,7 @@ class MachineConfigurationService {
         current_product_id: currentProduct?.id,
         current_product: currentProduct,
         assigned_orders: assignedOrders,
-        production_goal: machine.capacity_per_hour * 8, // 8 horas padrão
+        production_goal: 3000, // Meta padrão 3000 unidades/dia
         efficiency_target: 85, // Meta padrão
         status: this.mapMachineStatus(machine.status),
         notes: `Bobina atual: ${currentBobina?.reel_number || 'Não identificada'}`

@@ -161,8 +161,8 @@ class IntegratedPlanningService {
         plannedOrders: plannedOrders.map(this.mapToPlannedOrderItem),
         weeklyTarget: machinePlanning?.total_planned_quantity || 0,
         weeklyProgress: this.calculateWeeklyProgress(plannedOrders),
-        capacity_per_hour: machine.capacity_per_hour || 100,
-        utilization_percentage: this.calculateUtilization(plannedOrders, machine.capacity_per_hour),
+        capacity_per_hour: 375, // Capacidade padrão 375 unidades/hora
+        utilization_percentage: this.calculateUtilization(plannedOrders, 375),
         on_schedule: this.isOnSchedule(plannedOrders),
         alerts: this.generateMachineAlerts(machine, plannedOrders)
       }
@@ -370,7 +370,7 @@ class IntegratedPlanningService {
     const alerts = []
     
     // Alerta de sobrecarga
-    const utilization = this.calculateUtilization(orders, machine.capacity_per_hour)
+    const utilization = this.calculateUtilization(orders, 375) // Capacidade padrão
     if (utilization > 100) {
       alerts.push({
         type: 'overload',
