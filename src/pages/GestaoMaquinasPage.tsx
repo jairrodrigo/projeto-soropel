@@ -1,7 +1,7 @@
 // Página Gestão de Máquinas - Sistema Soropel
 // Seguindo padrões de design do projeto
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Play, 
   Pause, 
@@ -12,14 +12,17 @@ import {
   Wifi,
   RefreshCw,
   AlertTriangle,
-  Factory
+  Factory,
+  Users
 } from 'lucide-react'
 import { MachineCard } from '@/components/gestao-maquinas/MachineCard'
-import { NotificationBadge } from '@/components/gestao-maquinas/NotificationBadge'
+
 import { ModalPlanejamentoV2 } from '@/components/gestao-maquinas/ModalPlanejamentoV2'
 import { ModalConfigurarProdutos } from '@/components/gestao-maquinas/ModalConfigurarProdutos'
 import { ModalConfiguracaoMaquina } from '@/components/gestao-maquinas/ModalConfiguracaoMaquina'
 import { ModalIoTSystem } from '@/components/gestao-maquinas/ModalIoTSystem'
+import { ModalCadastroOperador } from '@/components/gestao-maquinas/ModalCadastroOperador'
+import { ListagemOperadores } from '@/components/gestao-maquinas/ListagemOperadores'
 import { useGestaoMaquinasStore } from '@/stores/gestao-maquinas'
 import { cn } from '@/utils'
 
@@ -36,6 +39,10 @@ export const GestaoMaquinasPage: React.FC = () => {
     closeModal,
     getMachineMetrics
   } = useGestaoMaquinasStore()
+
+  // Estados para controle dos modais de operadores
+  const [showCadastroOperador, setShowCadastroOperador] = useState(false)
+  const [showListagemOperadores, setShowListagemOperadores] = useState(false)
 
   const metrics = getMachineMetrics()
 
@@ -75,6 +82,24 @@ export const GestaoMaquinasPage: React.FC = () => {
   const handleConfigurarIoT = () => {
     openModal('iotSystem')
     console.log("Abrindo configuração do Sistema IoT...")
+  }
+
+  const handleGerenciarOperadores = () => {
+    setShowListagemOperadores(true)
+    console.log("Abrindo gerenciamento de operadores...")
+  }
+
+  const handleNovoOperador = () => {
+    setShowCadastroOperador(true)
+    console.log("Abrindo cadastro de novo operador...")
+  }
+
+  const handleOperadorSuccess = () => {
+    setShowCadastroOperador(false)
+    // Atualizar lista se estiver aberta
+    if (showListagemOperadores) {
+      // A ListagemOperadores já tem seu próprio refresh interno
+    }
   }
 
   const handleRefresh = () => {
@@ -166,6 +191,15 @@ export const GestaoMaquinasPage: React.FC = () => {
               >
                 <Wifi className="w-5 h-5" />
                 <span>Sistema IoT</span>
+              </button>
+
+              {/* Botão Operadores */}
+              <button
+                onClick={handleGerenciarOperadores}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-300 flex items-center space-x-2 shadow-lg"
+              >
+                <Users className="w-5 h-5" />
+                <span>Operadores</span>
               </button>
             </div>
           </div>
@@ -280,14 +314,20 @@ export const GestaoMaquinasPage: React.FC = () => {
           onClose={() => closeModal('iotSystem')}
         />
 
-        {/* Notificações de Bobinas - Nova Bobina → Máquinas */}
-        <NotificationBadge 
-          notifications={notifications || []}
-          onDismiss={(index) => {
-            // Opcional: remover notificação específica
-            console.log(`Notificação ${index} dispensada`)
-          }}
+        {/* Modais de Operadores */}
+        <ModalCadastroOperador 
+          isOpen={showCadastroOperador}
+          onClose={() => setShowCadastroOperador(false)}
+          onSuccess={handleOperadorSuccess}
         />
+
+        <ListagemOperadores 
+          isOpen={showListagemOperadores}
+          onClose={() => setShowListagemOperadores(false)}
+          onNovoOperador={handleNovoOperador}
+        />
+
+
       </div>
     </div>
   )

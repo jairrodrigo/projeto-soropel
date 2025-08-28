@@ -111,6 +111,21 @@ export interface Roll {
   machine?: Machine
 }
 
+// 👥 OPERADORES
+export interface Operator {
+  id: string
+  name: string
+  cpf?: string
+  phone?: string
+  email?: string
+  role: 'operador' | 'supervisor' | 'tecnico' | 'manutencao'
+  shift: 'manha' | 'tarde' | 'noite' | 'integral'
+  machine_ids?: number[]
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
 // 📊 REGISTROS DE PRODUÇÃO
 export interface ProductionRecord {
   id: string

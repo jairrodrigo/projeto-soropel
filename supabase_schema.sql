@@ -215,6 +215,36 @@ CREATE TABLE production_records (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8. TABELA DE OPERADORES
+-- =============================================
+CREATE TABLE operators (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- DADOS PESSOAIS
+  name TEXT NOT NULL,
+  cpf TEXT UNIQUE,
+  phone TEXT,
+  email TEXT,
+  
+  -- DADOS PROFISSIONAIS
+  role TEXT NOT NULL DEFAULT 'operador' CHECK (
+    role IN ('operador', 'supervisor', 'tecnico', 'lider')
+  ),
+  shift TEXT CHECK (
+    shift IN ('manha', 'tarde', 'noite', 'integral')
+  ),
+  
+  -- MÁQUINAS AUTORIZADAS
+  machine_ids INTEGER[], -- Array de IDs das máquinas que pode operar
+  
+  -- STATUS
+  active BOOLEAN DEFAULT true,
+  
+  -- CONTROLE
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =============================================
 -- ÍNDICES PARA PERFORMANCE
 -- =============================================
@@ -253,6 +283,12 @@ CREATE INDEX idx_production_order_item ON production_records(order_item_id);
 CREATE INDEX idx_production_machine ON production_records(machine_id);
 CREATE INDEX idx_production_date ON production_records(created_at);
 
+-- Operadores
+CREATE INDEX idx_operators_cpf ON operators(cpf);
+CREATE INDEX idx_operators_name ON operators(name);
+CREATE INDEX idx_operators_role ON operators(role);
+CREATE INDEX idx_operators_active ON operators(active);
+
 -- =============================================
 -- TRIGGERS PARA UPDATED_AT
 -- =============================================
@@ -282,4 +318,7 @@ CREATE TRIGGER update_order_items_updated_at BEFORE UPDATE ON order_items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_rolls_updated_at BEFORE UPDATE ON rolls
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_operators_updated_at BEFORE UPDATE ON operators
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

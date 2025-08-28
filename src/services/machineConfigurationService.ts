@@ -189,7 +189,7 @@ class MachineConfigurationService {
     try {
       console.log(`Carregando configuração da máquina ${machineId}...`)
 
-      // Buscar dados da máquina
+      // Buscar dados da máquina pelo machine_number (não pelo UUID)
       const { data: machine, error: machineError } = await supabase
         .from('machines')
         .select(`
@@ -199,7 +199,7 @@ class MachineConfigurationService {
           status,
           current_product
         `)
-        .eq('id', machineId)
+        .eq('machine_number', parseInt(machineId))
         .single()
 
       if (machineError) {
@@ -212,7 +212,7 @@ class MachineConfigurationService {
         const { data: bobina } = await supabase
           .from('bobinas')
           .select('reel_number, paper_type')
-          .eq('machine_id', machineId)
+          .eq('machine_id', machine.id)
           .eq('status', 'active')
           .single()
         
@@ -241,7 +241,7 @@ class MachineConfigurationService {
         const { data: orderItems } = await supabase
           .from('order_items')
           .select('id, quantity, order_id, product_id')
-          .eq('planned_machine_id', machineId)
+          .eq('planned_machine_id', machine.id)
 
         if (orderItems && orderItems.length > 0) {
           // Buscar dados dos pedidos separadamente
@@ -329,6 +329,17 @@ class MachineConfigurationService {
     try {
       console.log(`Atualizando produto da máquina ${machineId}...`)
 
+      // Buscar UUID da máquina pelo machine_number
+      const { data: machineData, error: findError } = await supabase
+        .from('machines')
+        .select('id')
+        .eq('machine_number', parseInt(machineId))
+        .single()
+
+      if (findError || !machineData) {
+        throw new Error(`Máquina ${machineId} não encontrada`)
+      }
+
       // Buscar nome do produto
       const { data: product, error: productError } = await supabase
         .from('products')
@@ -347,7 +358,7 @@ class MachineConfigurationService {
           current_product: product.name,
           updated_at: new Date().toISOString()
         })
-        .eq('id', machineId)
+        .eq('id', machineData.id)
 
       if (updateError) {
         throw new Error(`Erro ao atualizar máquina: ${updateError.message}`)
@@ -358,7 +369,7 @@ class MachineConfigurationService {
         const { error: ordersUpdateError } = await supabase
           .from('order_items')
           .update({
-            planned_machine_id: machineId,
+            planned_machine_id: machineData.id,
             updated_at: new Date().toISOString()
           })
           .in('id', selectedOrders)
@@ -375,7 +386,7 @@ class MachineConfigurationService {
           type: 'changed',
           title: `Máquina ${machineId} - Produto Alterado`,
           description: `Produto alterado para: ${product.name}`,
-          machine_id: machineId,
+          machine_id: machineData.id,
           user_name: 'Sistema Configuração',
           metadata: {
             product_id: productId,
@@ -412,6 +423,17 @@ class MachineConfigurationService {
     try {
       console.log(`Atualizando status da máquina ${machineId} para ${status}...`)
 
+      // Buscar UUID da máquina pelo machine_number
+      const { data: machineData, error: findError } = await supabase
+        .from('machines')
+        .select('id')
+        .eq('machine_number', parseInt(machineId))
+        .single()
+
+      if (findError || !machineData) {
+        throw new Error(`Máquina ${machineId} não encontrada`)
+      }
+
       // Mapear status para banco
       const dbStatus = this.mapStatusToDB(status)
 
@@ -421,7 +443,7 @@ class MachineConfigurationService {
           status: dbStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', machineId)
+        .eq('id', machineData.id)
 
       if (error) {
         throw new Error(`Erro ao atualizar status: ${error.message}`)
@@ -434,7 +456,7 @@ class MachineConfigurationService {
           type: 'status_changed',
           title: `Máquina ${machineId} - Status Alterado`,
           description: `Status alterado para: ${status}${reason ? ` - ${reason}` : ''}`,
-          machine_id: machineId,
+          machine_id: machineData.id,
           user_name: 'Sistema Configuração',
           metadata: {
             old_status: 'unknown',

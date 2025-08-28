@@ -22,6 +22,7 @@ const menuItems: MenuItem[] = [
   { id: 'novo-pedido', label: 'Novo Pedido', icon: 'PlusCircle', path: '/novo-pedido', active: false },
   { id: 'pedidos', label: 'Pedidos', icon: 'ClipboardList', path: '/pedidos', active: false },
   { id: 'maquinas', label: 'Máquinas', icon: 'Cog', path: '/maquinas', active: false },
+  
   { id: 'estoque', label: 'Controle de Estoque', icon: 'Package2', path: '/estoque', active: false },
   { id: 'relatorios', label: 'Relatórios', icon: 'BarChart', path: '/relatorios', active: false },
   { id: 'entregas', label: 'Entregas', icon: 'Truck', path: '/entregas', active: false },

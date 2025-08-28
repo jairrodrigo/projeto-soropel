@@ -17,12 +17,14 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react'
-import { cn } from '@/utils'
+import { cn, formatQuantityAsPackages } from '@/utils'
 import machineConfigurationService, { 
   ProductFromDB, 
   OrderForMachine, 
   MachineConfiguration 
 } from '@/services/machineConfigurationService'
+import operatorsService from '@/services/operatorsService'
+import { Operator } from '@/types/supabase'
 
 interface ModalConfiguracaoMaquinaProps {
   isOpen: boolean
@@ -44,20 +46,30 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
   const [configuration, setConfiguration] = useState<MachineConfiguration | null>(null)
   const [availableProducts, setAvailableProducts] = useState<ProductFromDB[]>([])
   const [ordersForProduct, setOrdersForProduct] = useState<OrderForMachine[]>([])
+  const [availableOperators, setAvailableOperators] = useState<Operator[]>([])
   
   // Estados da UI
   const [selectedProductId, setSelectedProductId] = useState<string>('')
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [newStatus, setNewStatus] = useState<'active' | 'maintenance' | 'stopped' | 'waiting'>('active')
   const [maintenanceReason, setMaintenanceReason] = useState('')
+  const [selectedOperator, setSelectedOperator] = useState('')
   const [activeTab, setActiveTab] = useState<'product' | 'status' | 'overview'>('product')
 
   // Carregar dados ao abrir modal
   useEffect(() => {
     if (isOpen && machineId) {
       loadMachineConfiguration()
+      loadAvailableOperators()
     }
   }, [isOpen, machineId])
+
+  // Inicializar operador quando configuração é carregada
+  useEffect(() => {
+    if (configuration && configuration.operator) {
+      setSelectedOperator(configuration.operator)
+    }
+  }, [configuration])
 
   // Carregar pedidos quando produto é selecionado
   useEffect(() => {
@@ -95,6 +107,17 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
       setError(error instanceof Error ? error.message : 'Erro desconhecido')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAvailableOperators = async () => {
+    try {
+      const result = await operatorsService.getAvailableOperators()
+      if (result.success) {
+        setAvailableOperators(result.data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar operadores:', error)
     }
   }
 
@@ -138,6 +161,12 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
         if (!statusResult.success) {
           throw new Error(statusResult.error)
         }
+      }
+
+      // Atualizar operador se mudou
+      if (selectedOperator !== configuration.operator) {
+        // Aqui seria feita a atualização do operador via API
+        console.log('Atualizando operador:', selectedOperator)
       }
 
       alert('Configuração salva com sucesso!')
@@ -321,7 +350,12 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                   <div>
                                     <p><strong>Cliente:</strong> {order.customer_name}</p>
-                                    <p><strong>Quantidade:</strong> {order.quantity.toLocaleString()} unidades</p>
+                                    <div className="mt-1">
+                                      <p><strong>Quantidade:</strong></p>
+                                      <p className="text-blue-600 font-medium ml-2">
+                                        {formatQuantityAsPackages(order.quantity)} pacotes ({order.quantity.toLocaleString('pt-BR')} unidades)
+                                      </p>
+                                    </div>
                                   </div>
                                   <div>
                                     <p><strong>Entrega:</strong> {order.delivery_date}</p>
@@ -337,14 +371,27 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
                       </div>
                       
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between text-sm">
-                          <span>Pedidos selecionados: {selectedOrders.length}</span>
-                          <span>
-                            Total: {ordersForProduct
-                              .filter(o => selectedOrders.includes(o.id))
-                              .reduce((sum, o) => sum + o.quantity, 0)
-                              .toLocaleString()} unidades
-                          </span>
+                        <div className="flex flex-col gap-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Pedidos selecionados: {selectedOrders.length}</span>
+                            <span className="font-medium text-blue-600">
+                              {(() => {
+                                const totalQuantity = ordersForProduct
+                                  .filter(o => selectedOrders.includes(o.id))
+                                  .reduce((sum, o) => sum + o.quantity, 0);
+                                return `${formatQuantityAsPackages(totalQuantity)} pacotes`;
+                              })()} 
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Total em unidades:</span>
+                            <span className="font-medium text-gray-700">
+                              {ordersForProduct
+                                .filter(o => selectedOrders.includes(o.id))
+                                .reduce((sum, o) => sum + o.quantity, 0)
+                                .toLocaleString('pt-BR')} unidades
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -411,7 +458,7 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
               {/* Tab: Visão Geral */}
               {activeTab === 'overview' && configuration && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-6 mb-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <Package className="w-5 h-5 text-blue-600" />
@@ -433,7 +480,26 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
                         <Target className="w-5 h-5 text-purple-600" />
                         <span className="font-medium text-purple-900">Meta Produção</span>
                       </div>
-                      <p className="text-purple-800">{configuration.production_goal.toLocaleString()}/dia</p>
+                      <p className="text-purple-800">{formatQuantityAsPackages(configuration.production_goal)}/dia</p>
+                    </div>
+
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="w-5 h-5 text-orange-600" />
+                        <span className="font-medium text-orange-900">Operador</span>
+                      </div>
+                      <select
+                        value={selectedOperator}
+                        onChange={(e) => setSelectedOperator(e.target.value)}
+                        className="w-full mt-2 p-2 text-sm border border-orange-200 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                      >
+                        <option value="">Selecionar operador...</option>
+                        {availableOperators.map(operator => (
+                          <option key={operator.id} value={operator.name}>
+                            {operator.name} - {operator.role}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -443,9 +509,16 @@ export const ModalConfiguracaoMaquina: React.FC<ModalConfiguracaoMaquinaProps> =
                       <div className="space-y-3">
                         {configuration.assigned_orders.map(order => (
                           <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div>
+                            <div className="flex-1">
                               <p className="font-medium">#{order.order_number} - {order.customer_name}</p>
-                              <p className="text-sm text-gray-600">{order.quantity.toLocaleString()} unidades</p>
+                              <div className="text-sm text-gray-600 mt-1">
+                                <p className="font-medium text-blue-600">
+                                  {formatQuantityAsPackages(order.quantity)} pacotes
+                                </p>
+                                <p className="text-gray-500">
+                                  ({order.quantity.toLocaleString('pt-BR')} unidades)
+                                </p>
+                              </div>
                             </div>
                             <div className="text-right">
                               <p className="text-sm text-gray-600">Entrega: {order.delivery_date}</p>
