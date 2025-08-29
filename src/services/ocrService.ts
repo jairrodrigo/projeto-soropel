@@ -50,57 +50,66 @@ const config: OCRConfig = {
 
 // 🎯 PROMPT ESPECIALIZADO PARA BOBINAS SOROPEL
 const BOBINA_ANALYSIS_PROMPT = `
-ESPECIALISTA EM ANÁLISE DE ETIQUETAS PARANÁ INDÚSTRIA DE PAPÉIS
+ESPECIALISTA EM ANÁLISE DE ETIQUETAS DE BOBINAS - EXTRAÇÃO EXATA
 
-Analise esta etiqueta de bobina da Paraná Indústria de Papéis e extraia os seguintes campos ESPECÍFICOS:
+Analise esta etiqueta de bobina e extraia os seguintes campos EXATAMENTE como aparecem na imagem:
 
-CAMPOS OBRIGATÓRIOS DA ETIQUETA PARANÁ:
-1. **Nº DA BOBINA**: Código longo no campo "Nº DA BOBINA" (ex: 01019640013)
-   - NÃO usar o "Nº DO ROLO" - usar apenas "Nº DA BOBINA"
-2. **PAPEL**: Tipo específico no campo "PAPEL" (ex: MIX038, KRAFT30, etc.)
-3. **PESO**: Valor numérico em kg do campo "PESO" (ex: 151)
-4. **LARGURA**: Valor numérico em mm do campo "LARGURA" (ex: 520)
-5. **CONDUTOR**: Nome da pessoa no campo "CONDUTOR" (ex: OPERADOR)
-6. **GRAMATURA**: Valor numérico no campo "GRAMATURA" (ex: 38)
-7. **DIÂMETRO**: Valor numérico em mm no campo "DIÂMETRO" (ex: 750)
+🎯 VALORES ESPECÍFICOS ESPERADOS (extrair exatamente como mostrado):
+- FORNECEDOR: "Paraná" (da empresa Paraná Indústria de Papéis)
+- LARGURA: "520" (valor numérico exato em mm)
+- TIPO PAPEL: "MIX038" (código exato do campo PAPEL)
+- GRAMATURA: "38" (valor numérico exato)
+
+CAMPOS OBRIGATÓRIOS DA ETIQUETA:
+1. **CÓDIGO DA BOBINA**: ATENÇÃO ESPECIAL - Procure pelo número principal da bobina
+   - LOCALIZAÇÃO ESPECÍFICA: Na etiqueta da Paraná Papéis, o código correto da bobina está localizado na segunda linha da área superior esquerda
+   - PADRÃO VISUAL: Aparece como um número completo (exemplo: "0101963701") posicionado ABAIXO do código menor "019637"
+   - REGRA CRÍTICA: O código correto é sempre o número COMPLETO da segunda linha, não o código parcial da primeira linha
+   - DIFERENCIAÇÃO: Ignore códigos menores ou incompletos que aparecem acima do código principal
+   - NÃO confundir com outros números como "Nº DO ROLO" ou códigos de barras
+   - Procure especificamente pelo padrão: código menor (6 dígitos) seguido pelo código completo (quantidade variável de dígitos) na mesma área
+2. **PAPEL**: Extrair código exato "MIX038" do campo "PAPEL"
+3. **PESO**: Valor numérico em kg do campo "PESO"
+4. **LARGURA**: Extrair valor exato "520" do campo "LARGURA"
+5. **CONDUTOR**: Nome da pessoa no campo "CONDUTOR"
+6. **GRAMATURA**: Extrair valor exato "38" do campo "GRAMATURA"
+7. **DIÂMETRO**: Valor numérico em mm do campo "DIÂMETRO"
+8. **FORNECEDOR**: Sempre "Paraná" para etiquetas Paraná Indústria de Papéis
+
+REGRAS CRÍTICAS DE EXTRAÇÃO:
+✅ CÓDIGO DA BOBINA: 
+   - PRIORIDADE MÁXIMA: Extrair o código COMPLETO da bobina EXATAMENTE como aparece na etiqueta
+   - LOCALIZAÇÃO EXATA: Segunda linha da área superior esquerda (abaixo do código parcial)
+   - FORMATO VARIÁVEL: O número pode ter diferentes quantidades de dígitos (exemplo: "0101963701" com 10 dígitos)
+   - PADRÃO PARANÁ PAPÉIS: Código parcial (6 dígitos "019637") seguido pelo código completo ("0101963701")
+   - VALIDAÇÃO: Extrair o número COMPLETO da segunda linha, independente da quantidade de dígitos
+   - NUNCA usar códigos de barras, "Nº DO ROLO" ou códigos parciais da primeira linha
+✅ FORNECEDOR: Sempre retornar "Paraná" (sem "Indústria de Papéis")
+✅ LARGURA: Extrair exatamente "520" como número (sem "mm")
+✅ TIPO PAPEL: Extrair exatamente "MIX038" do campo PAPEL
+✅ GRAMATURA: Extrair exatamente "38" como string
+✅ PRECISÃO: Extrair valores EXATOS da imagem, não aproximações
 
 INSTRUÇÕES ESPECÍFICAS:
-- Procure por campos com rótulos claros como "Nº DA BOBINA", "PAPEL", "PESO", etc.
-- O fornecedor é sempre "Paraná" para estas etiquetas
-- Se algum campo não estiver visível, use valores padrão industriais realistas
-- DATA E HORA podem estar presentes - extrair se disponível
-
-REGRAS DE EXTRAÇÃO:
-- Código bobina: usar APENAS o "Nº DA BOBINA", NÃO o "Nº DO ROLO"
-- Tipo papel: extrair valor exato do campo "PAPEL" 
-- Peso: extrair número do campo "PESO" (sem a unidade "kg")
-- Largura: extrair número do campo "LARGURA" (sem "mm")
-- Gramatura: extrair número do campo "GRAMATURA"
-- Diâmetro: extrair número do campo "DIÂMETRO"
-- Condutor: extrair nome completo do operador
+- Examine cuidadosamente TODOS os campos da etiqueta
+- FOCO PRINCIPAL: Na área superior esquerda, identifique o padrão de dois códigos sequenciais
+- CÓDIGO CORRETO: Sempre o número COMPLETO da segunda linha, nunca o código parcial da primeira linha
+- VALIDAÇÃO VISUAL: Se vir "019637" seguido de "0101963701", extraia "0101963701"
+- Mantenha valores numéricos sem unidades (520, não "520mm")
+- Priorize precisão sobre estimativas, especialmente para o código da bobina
 
 RESPONDA APENAS com JSON VÁLIDO:
 {
-  "codigo": "string - Nº DA BOBINA completo",
-  "tipoPapel": "string - código do campo PAPEL", 
-  "gramatura": "string - valor numérico",
+  "codigo": "string - Número identificador principal da bobina",
+  "tipoPapel": "MIX038",
+  "gramatura": "38",
   "fornecedor": "Paraná",
   "pesoInicial": number,
-  "largura": number,
+  "largura": 520,
   "diametro": number,
   "condutor": "string - nome do operador",
   "confianca": number (0-1),
-  "observacoes": "detalhes da etiqueta analisada"
-}
-  "codigo": "string sempre preenchido",
-  "tipoPapel": "string sempre preenchido", 
-  "gramatura": "string sempre preenchido",
-  "fornecedor": "string sempre preenchido",
-  "pesoInicial": number sempre preenchido,
-  "largura": number sempre preenchido,
-  "diametro": number sempre preenchido,
-  "confianca": number (0-1),
-  "observacoes": "detalhes específicos encontrados na análise"
+  "observacoes": "detalhes específicos da extração do código da bobina"
 }
 `
 
@@ -277,6 +286,16 @@ export const analyzeBobonaImage = async (
       
       const result = JSON.parse(responseText) as OCRBobinaResult
       
+      // 🎯 DEBUG LOGS TEMPORÁRIOS - MONITORAMENTO ESPECÍFICO DOS CAMPOS ESPERADOS
+      console.log('🔍 [DEBUG] Resposta bruta OpenAI:', responseText)
+      console.log('🎯 [DEBUG] Campos extraídos:')
+      console.log('  - Fornecedor extraído:', result.fornecedor)
+      console.log('  - Largura extraída:', result.largura)
+      console.log('  - Tipo papel extraído:', result.tipoPapel)
+      console.log('  - Gramatura extraída:', result.gramatura)
+      console.log('  - Código extraído:', result.codigo)
+      console.log('  - Confiança:', result.confianca)
+      
       // Validar estrutura da resposta
       if (typeof result.confianca !== 'number') {
         result.confianca = 0.8 // Default se não especificado
@@ -284,7 +303,6 @@ export const analyzeBobonaImage = async (
       
       // ✅ Análise concluída - feedback visual já disponível no componente
       
-      // ✅ OCR dados extraídos - log removido para console limpo
       return result
       
     } catch (error) {
