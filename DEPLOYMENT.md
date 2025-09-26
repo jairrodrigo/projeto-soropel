@@ -1,165 +1,121 @@
-# 🚀 **DEPLOYMENT GUIDE - SISTEMA SOROPEL**
+# 🚀 Deployment - Sistema Soropel
 
-## 🌐 **AMBIENTES CONFIGURADOS**
+## 📋 Visão Geral
 
-### **📊 ESTRUTURA PROFISSIONAL:**
-```
-🟢 PRODUÇÃO:  https://sistema-soropel.vercel.app
-               ↑ main branch (releases estáveis)
+Este projeto utiliza **GitHub Actions** para CI/CD automatizado, executando testes e builds a cada push ou pull request.
 
-🟡 STAGING:    https://sistema-soropel-staging.vercel.app  
-               ↑ develop branch (testes antes da produção)
+## 🌍 Ambientes
 
-🔵 PREVIEWS:   URLs únicas para cada Pull Request
-               ↑ feature branches (review de código)
-```
+### 🟢 **Desenvolvimento Local**
+- **URL:** `http://localhost:3000`
+- **Comando:** `npm run dev`
 
-## 🔄 **WORKFLOW DE DESENVOLVIMENTO**
+### 🔵 **GitHub Actions CI/CD**
+- **Triggers:** Push e Pull Request para `main` e `develop`
+- **Workflow:** Testes TypeScript + Build automático
+- **Status:** ✅ Configurado
 
-### **🚀 PARA NOVAS FUNCIONALIDADES:**
+## 🔄 Workflow de Desenvolvimento
+
+### 🆕 **Nova Feature**
 ```bash
-1. git checkout develop
-2. git pull origin develop
-3. git checkout -b feature/nome-da-funcionalidade
-4. # desenvolvimento...
-5. git add . && git commit -m "feat: nova funcionalidade"
-6. git push origin feature/nome-da-funcionalidade
-7. # Criar PR: feature → develop
-8. # Review da equipe + teste na URL de preview
-9. # Merge para develop (vai para staging)
-10. # Testar em staging
-11. # PR develop → main (vai para produção)
+git checkout develop
+git pull origin develop
+git checkout -b feature/nova-funcionalidade
+# ... desenvolvimento ...
+git add .
+git commit -m "feat: Nova funcionalidade"
+git push origin feature/nova-funcionalidade
+# Criar Pull Request para develop
 ```
 
-### **🔧 PARA CORREÇÕES URGENTES:**
+### 🚨 **Correção Urgente**
 ```bash
-1. git checkout main
-2. git checkout -b hotfix/correcao-urgente
-3. # correção...
-4. git add . && git commit -m "fix: correção crítica"
-5. # PR direto para main
-6. # Cherry-pick para develop
+git checkout main
+git pull origin main
+git checkout -b hotfix/correcao-urgente
+# ... correção ...
+git add .
+git commit -m "fix: Correção urgente"
+git push origin hotfix/correcao-urgente
+# Criar Pull Request para main
 ```
 
-## ⚙️ **CONFIGURAÇÃO NO VERCEL**
+## ⚙️ GitHub Actions
 
-### **🎯 SETUP INICIAL:**
+### 📁 **Arquivo de Configuração**
+- **Local:** `.github/workflows/deploy.yml`
+- **Nome:** `🚀 CI/CD Sistema Soropel`
 
-#### **1. Conectar Repositório:**
-- GitHub → Vercel Dashboard
-- Import Repository: `jairrodrigo/sistema-soropel`
-- Framework: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
+### 🔧 **Jobs Configurados**
 
-#### **2. Configurar Domínios:**
-```
-🟢 Production Domain:  sistema-soropel.vercel.app
-🟡 Staging Domain:     sistema-soropel-staging.vercel.app
-```
+#### 🧪 **test-and-build**
+- ✅ Checkout do código
+- ✅ Setup Node.js 18
+- ✅ Instalação de dependências
+- ✅ Verificação TypeScript
+- ✅ Build do projeto
+- ✅ Análise do tamanho do build
 
-#### **3. Branch Configuration:**
-```
-🟢 main → Production deployment
-🟡 develop → Staging deployment  
-🔵 feature/* → Preview deployments
-```
+## 🛠️ Comandos Úteis
 
-#### **4. Environment Variables:**
+### 🏠 **Desenvolvimento Local**
 ```bash
-# Production (main branch)
-VITE_APP_ENVIRONMENT=production
-VITE_API_URL=https://api.sistema-soropel.com
-VITE_DEBUG_MODE=false
+# Instalar dependências
+npm install
 
-# Staging (develop branch)  
-VITE_APP_ENVIRONMENT=staging
-VITE_API_URL=https://staging-api.sistema-soropel.com
-VITE_DEBUG_MODE=true
+# Executar em modo desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Preview do build
+npm run preview
+
+# Verificação TypeScript
+npx tsc --noEmit
 ```
 
-## 🤖 **CI/CD AUTOMÁTICO**
-
-### **✅ GITHUB ACTIONS CONFIGURADO:**
-- **Testes automáticos** em cada push
-- **Build verification** 
-- **TypeScript check**
-- **Deploy automático** por branch
-- **PR previews** com comentários automáticos
-
-### **🔍 CHECKS AUTOMÁTICOS:**
-```yaml
-✅ TypeScript compilation
-✅ Build success
-✅ Bundle size analysis
-✅ Code quality
-```
-
-## 📋 **COMANDOS ÚTEIS**
-
-### **🏠 LOCAL DEVELOPMENT:**
+### 📊 **Monitoramento**
 ```bash
-npm run dev          # Servidor de desenvolvimento
-npm run build        # Build para produção
-npm run preview      # Preview do build
-npm run type-check   # Verificar TypeScript
+# Verificar status do último commit
+git log --oneline -5
+
+# Ver diferenças
+git status
+
+# Verificar branches
+git branch -a
 ```
 
-### **🌐 VERCEL CLI (opcional):**
-```bash
-npx vercel          # Deploy manual
-npx vercel --prod   # Deploy para produção
-npx vercel dev      # Desenvolvimento local com Vercel
-```
+## 🔍 Monitoramento
 
-## 🔐 **SECRETS NECESSÁRIOS**
+### 📈 **GitHub Actions**
+- **URL:** `https://github.com/jairrodrigo/projeto-soropel/actions`
+- **Status:** Visível em cada commit
+- **Logs:** Disponíveis para debug
 
-### **📝 GITHUB SECRETS (para CI/CD):**
-```
-VERCEL_TOKEN=         # Token da sua conta Vercel
-ORG_ID=              # ID da organização Vercel
-PROJECT_ID=          # ID do projeto Vercel
-```
+### 📊 **Build Status**
+- ✅ **Sucesso:** Build completo sem erros
+- ❌ **Falha:** Verificar logs no GitHub Actions
+- 🟡 **Em Progresso:** Aguardar conclusão
 
-### **🎯 COMO OBTER:**
-1. **Vercel Token**: Settings → Tokens → Create
-2. **ORG_ID**: Vercel CLI → `npx vercel link`
-3. **PROJECT_ID**: Vercel CLI → `npx vercel link`
+## 🎯 Próximos Passos
 
-## 📊 **MONITORAMENTO**
-
-### **🔍 LOGS & ANALYTICS:**
-- **Vercel Dashboard**: Deploy logs e performance
-- **GitHub Actions**: Build status e testes
-- **Vercel Analytics**: Visitors e Core Web Vitals
-
-### **🚨 ALERTAS:**
-- **Failed builds** → Email notifications
-- **Performance issues** → Vercel insights
-- **Error tracking** → Console do browser
-
-## 🎯 **BEST PRACTICES**
-
-### **✅ ANTES DE FAZER MERGE:**
-- ✅ Testar localmente (`npm run build`)
-- ✅ Verificar TypeScript (`npx tsc --noEmit`)
-- ✅ Review do código
-- ✅ Testar na URL de preview
-- ✅ Confirmar funcionalidades principais
-
-### **🔄 DEPLOY STRATEGY:**
-1. **Feature** → develop (staging)
-2. **Test** em staging
-3. **Approve** → main (production)
-4. **Monitor** performance e errors
+1. **✅ CI/CD Configurado** - GitHub Actions funcionando
+2. **🔄 Workflow Estabelecido** - Branches e PRs organizados
+3. **📊 Monitoramento Ativo** - Logs e status visíveis
 
 ---
 
-## 🎉 **RESULTADO FINAL**
+## 📝 Notas Importantes
 
-**🌐 URLs DO PROJETO:**
-- **Produção**: `https://sistema-soropel.vercel.app`
-- **Staging**: `https://sistema-soropel-staging.vercel.app`
-- **Previews**: URLs únicas para cada PR
+- **Branches principais:** `main` (produção) e `develop` (desenvolvimento)
+- **Pull Requests:** Obrigatórios para mudanças importantes
+- **Testes automáticos:** Executados a cada push
+- **Build verification:** Garantia de código funcional
 
-**🚀 WORKFLOW PROFISSIONAL COMPLETO CONFIGURADO! 🎯**
+---
+
+*Última atualização: 2025-01-26*
