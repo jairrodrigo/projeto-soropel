@@ -50,66 +50,83 @@ const config: OCRConfig = {
 
 // 🎯 PROMPT ESPECIALIZADO PARA BOBINAS SOROPEL
 const BOBINA_ANALYSIS_PROMPT = `
-ESPECIALISTA EM ANÁLISE DE ETIQUETAS DE BOBINAS - EXTRAÇÃO EXATA
+ESPECIALISTA EM ANÁLISE DE ETIQUETAS DE BOBINAS - PREENCHIMENTO AUTOMÁTICO DE FORMULÁRIO
 
-Analise esta etiqueta de bobina e extraia os seguintes campos EXATAMENTE como aparecem na imagem:
+Analise esta etiqueta de bobina e extraia os dados para preencher automaticamente os seguintes campos do formulário:
 
-🎯 VALORES ESPECÍFICOS ESPERADOS (extrair exatamente como mostrado):
-- FORNECEDOR: "Paraná" (da empresa Paraná Indústria de Papéis)
-- LARGURA: "520" (valor numérico exato em mm)
-- TIPO PAPEL: "MIX038" (código exato do campo PAPEL)
-- GRAMATURA: "38" (valor numérico exato)
+🎯 CAMPOS PRIORITÁRIOS DO FORMULÁRIO (input e select):
+1. **CÓDIGO DA BOBINA** (input text) - Campo obrigatório
+2. **LARGURA** (input number) - Campo obrigatório  
+3. **TIPO DE PAPEL** (select/input) - Campo obrigatório
+4. **GRAMATURA** (select/input) - Campo obrigatório
+5. **FORNECEDOR** (select/input) - Campo obrigatório
 
-CAMPOS OBRIGATÓRIOS DA ETIQUETA:
-1. **CÓDIGO DA BOBINA**: ATENÇÃO ESPECIAL - Procure pelo número principal da bobina
-   - LOCALIZAÇÃO ESPECÍFICA: Na etiqueta da Paraná Papéis, o código correto da bobina está localizado na segunda linha da área superior esquerda
-   - PADRÃO VISUAL: Aparece como um número completo (exemplo: "0101963701") posicionado ABAIXO do código menor "019637"
-   - REGRA CRÍTICA: O código correto é sempre o número COMPLETO da segunda linha, não o código parcial da primeira linha
-   - DIFERENCIAÇÃO: Ignore códigos menores ou incompletos que aparecem acima do código principal
-   - NÃO confundir com outros números como "Nº DO ROLO" ou códigos de barras
-   - Procure especificamente pelo padrão: código menor (6 dígitos) seguido pelo código completo (quantidade variável de dígitos) na mesma área
-2. **PAPEL**: Extrair código exato "MIX038" do campo "PAPEL"
-3. **PESO**: Valor numérico em kg do campo "PESO"
-4. **LARGURA**: Extrair valor exato "520" do campo "LARGURA"
-5. **CONDUTOR**: Nome da pessoa no campo "CONDUTOR"
-6. **GRAMATURA**: Extrair valor exato "38" do campo "GRAMATURA"
-7. **DIÂMETRO**: Valor numérico em mm do campo "DIÂMETRO"
-8. **FORNECEDOR**: Sempre "Paraná" para etiquetas Paraná Indústria de Papéis
+INSTRUÇÕES ESPECÍFICAS PARA CADA CAMPO:
 
-REGRAS CRÍTICAS DE EXTRAÇÃO:
-✅ CÓDIGO DA BOBINA: 
-   - PRIORIDADE MÁXIMA: Extrair o código COMPLETO da bobina EXATAMENTE como aparece na etiqueta
-   - LOCALIZAÇÃO EXATA: Segunda linha da área superior esquerda (abaixo do código parcial)
-   - FORMATO VARIÁVEL: O número pode ter diferentes quantidades de dígitos (exemplo: "0101963701" com 10 dígitos)
-   - PADRÃO PARANÁ PAPÉIS: Código parcial (6 dígitos "019637") seguido pelo código completo ("0101963701")
-   - VALIDAÇÃO: Extrair o número COMPLETO da segunda linha, independente da quantidade de dígitos
-   - NUNCA usar códigos de barras, "Nº DO ROLO" ou códigos parciais da primeira linha
-✅ FORNECEDOR: Sempre retornar "Paraná" (sem "Indústria de Papéis")
-✅ LARGURA: Extrair exatamente "520" como número (sem "mm")
-✅ TIPO PAPEL: Extrair exatamente "MIX038" do campo PAPEL
-✅ GRAMATURA: Extrair exatamente "38" como string
-✅ PRECISÃO: Extrair valores EXATOS da imagem, não aproximações
+📋 **CÓDIGO DA BOBINA** (input):
+   - LOCALIZAÇÃO: Área superior esquerda da etiqueta
+   - PADRÃO VISUAL: Número completo (ex: "0101963701") na segunda linha
+   - REGRA CRÍTICA: Extrair o código COMPLETO, não códigos parciais
+   - DIFERENCIAÇÃO: Ignorar códigos de barras ou "Nº DO ROLO"
+   - FORMATO: String exata como aparece na etiqueta
 
-INSTRUÇÕES ESPECÍFICAS:
-- Examine cuidadosamente TODOS os campos da etiqueta
-- FOCO PRINCIPAL: Na área superior esquerda, identifique o padrão de dois códigos sequenciais
-- CÓDIGO CORRETO: Sempre o número COMPLETO da segunda linha, nunca o código parcial da primeira linha
-- VALIDAÇÃO VISUAL: Se vir "019637" seguido de "0101963701", extraia "0101963701"
-- Mantenha valores numéricos sem unidades (520, não "520mm")
-- Priorize precisão sobre estimativas, especialmente para o código da bobina
+📏 **LARGURA** (input number):
+   - LOCALIZAÇÃO: Campo "LARGURA" na etiqueta
+   - FORMATO: Valor numérico sem unidade (ex: 520, não "520mm")
+   - TIPO: Number para o input do formulário
 
-RESPONDA APENAS com JSON VÁLIDO:
+📄 **TIPO DE PAPEL** (select ou input):
+   - LOCALIZAÇÃO: Campo "PAPEL" na etiqueta
+   - FORMATO: Código exato (ex: "MIX038")
+   - COMPORTAMENTO: Se dados extraídos, vira input; senão, select com opções
+
+⚖️ **GRAMATURA** (select ou input):
+   - LOCALIZAÇÃO: Campo "GRAMATURA" na etiqueta  
+   - FORMATO: Valor numérico como string (ex: "38")
+   - COMPORTAMENTO: Se dados extraídos, vira input; senão, select com opções
+
+🚚 **FORNECEDOR** (select ou input):
+   - LOCALIZAÇÃO: Identificar empresa na etiqueta
+   - FORMATO: Nome simplificado (ex: "Paraná" para "Paraná Indústria de Papéis")
+   - COMPORTAMENTO: Se dados extraídos, vira input; senão, select com opções
+
+CAMPOS ADICIONAIS (para completude):
+- **PESO INICIAL**: Valor numérico do campo "PESO" (number)
+- **DIÂMETRO**: Valor numérico do campo "DIÂMETRO" (number)
+- **CONDUTOR**: Nome do operador (string)
+
+REGRAS DE EXTRAÇÃO:
+✅ PRIORIDADE: Focar nos 5 campos principais do formulário
+✅ PRECISÃO: Extrair valores EXATOS, não aproximações
+✅ FORMATO: Respeitar tipos de dados (string, number)
+✅ VALIDAÇÃO: Verificar se todos os campos obrigatórios foram extraídos
+
+RESPOSTA OBRIGATÓRIA - JSON VÁLIDO:
 {
-  "codigo": "string - Número identificador principal da bobina",
-  "tipoPapel": "MIX038",
+  "codigo": "string - Código completo da bobina para input",
+  "largura": number - Valor numérico para input,
+  "tipoPapel": "string - Tipo/código do papel para select/input",
+  "gramatura": "string - Valor da gramatura para select/input", 
+  "fornecedor": "string - Nome do fornecedor para select/input",
+  "pesoInicial": number - Peso em kg,
+  "diametro": number - Diâmetro em mm,
+  "condutor": "string - Nome do operador",
+  "confianca": number (0-1),
+  "observacoes": "string - Detalhes da extração"
+}
+
+EXEMPLO DE RESPOSTA ESPERADA:
+{
+  "codigo": "0101963701",
+  "largura": 520,
+  "tipoPapel": "MIX038", 
   "gramatura": "38",
   "fornecedor": "Paraná",
-  "pesoInicial": number,
-  "largura": 520,
-  "diametro": number,
-  "condutor": "string - nome do operador",
-  "confianca": number (0-1),
-  "observacoes": "detalhes específicos da extração do código da bobina"
+  "pesoInicial": 151,
+  "diametro": 800,
+  "condutor": "João Silva",
+  "confianca": 0.95,
+  "observacoes": "Todos os campos do formulário extraídos com sucesso"
 }
 `
 

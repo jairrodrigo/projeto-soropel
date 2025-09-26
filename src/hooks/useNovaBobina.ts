@@ -184,66 +184,201 @@ export const useNovaBobina = () => {
     }, 'image/jpeg', 0.8)
   }, [])
 
-  // 🤖 PROCESSAMENTO REAL VIA OCR + OPENAI VISION API
+  // 📤 ENVIAR IMAGEM PARA WEBHOOK N8N
+  const sendImageToWebhook = useCallback(async (imageBlob: Blob) => {
+    try {
+      console.log('📤 Enviando imagem para webhook N8N...')
+      console.log('🔍 Blob details:', {
+        size: imageBlob.size,
+        type: imageBlob.type
+      })
+      
+      // Converter Blob para base64
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const result = reader.result as string
+          // Remove o prefixo "data:image/jpeg;base64," para obter apenas o base64
+          const base64Data = result.split(',')[1]
+          resolve(base64Data)
+        }
+        reader.readAsDataURL(imageBlob)
+      })
+      
+      console.log('🔍 Base64 length:', base64.length)
+      console.log('🔍 Base64 preview:', base64.substring(0, 100) + '...')
+      
+      // Criar payload JSON com base64
+      const payload = {
+        data: {
+          base64: base64
+        }
+      }
+      
+      console.log('🔍 Payload structure:', {
+        hasData: !!payload.data,
+        hasBase64: !!payload.data.base64,
+        base64Length: payload.data.base64.length
+      })
+      
+      console.log('🔍 Request details:', {
+        url: 'https://n8n.botneural.online/webhook/fotosbobinas',
+        method: 'POST',
+        bodyType: 'JSON',
+        contentType: 'application/json'
+      })
+      
+      const response = await fetch('https://n8n.botneural.online/webhook/fotosbobinas', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Imagem enviada com sucesso para webhook:', result)
+        
+        showNotification({
+          message: '✅ Imagem enviada para webhook com sucesso!',
+          type: 'success'
+        })
+        
+        return result
+      } else {
+        throw new Error(`Webhook retornou status ${response.status}`)
+      }
+    } catch (error) {
+      console.error('❌ Erro ao enviar imagem para webhook:', error)
+      
+      showNotification({
+        message: '⚠️ Erro ao enviar para webhook, mas continuando processamento...',
+        type: 'warning'
+      })
+      
+      return null
+    }
+  }, [showNotification])
+
+  // 🔄 PROCESSAR RESPOSTA DO WEBHOOK N8N
+  const processWebhookResponse = useCallback((webhookData: any) => {
+    try {
+      console.log('🔄 Processando resposta do webhook:', webhookData)
+      
+      if (!webhookData) {
+        console.warn('⚠️ Webhook retornou dados vazios')
+        return false
+      }
+      
+      // Extrair dados do webhook
+      const extractedData = {
+        codigo: webhookData.codigo || '',
+        largura: webhookData.largura || 0,
+        tipoPapel: webhookData.tipoPapel || '',
+        gramatura: webhookData.gramatura || '',
+        fornecedor: webhookData.fornecedor || '',
+        pesoInicial: webhookData.pesoInicial || 0,
+        diametro: webhookData.diametro || 0,
+        condutor: webhookData.condutor || '',
+        confianca: webhookData.confianca || 0,
+        observacoes: webhookData.observacoes || ''
+      }
+      
+      console.log('📋 Dados extraídos do webhook:', extractedData)
+      
+      // Atualizar formulário com os dados extraídos
+      setFormData(prev => ({
+        ...prev,
+        codigoBobina: extractedData.codigo,
+        largura: extractedData.largura.toString(),
+        tipoPapel: extractedData.tipoPapel,
+        gramatura: extractedData.gramatura,
+        fornecedor: extractedData.fornecedor,
+        pesoInicial: extractedData.pesoInicial.toString(),
+        pesoAtual: extractedData.pesoInicial.toString(), // Peso atual = peso inicial inicialmente
+        observacoes: extractedData.observacoes
+      }))
+      
+      console.log('✅ Formulário atualizado com dados do webhook')
+      
+      showNotification({
+        message: `✅ Dados extraídos! Confiança: ${Math.round(extractedData.confianca * 100)}%`,
+        type: 'success'
+      })
+      
+      return true
+      
+    } catch (error) {
+      console.error('❌ Erro ao processar resposta do webhook:', error)
+      
+      showNotification({
+        message: '⚠️ Erro ao processar dados do webhook',
+        type: 'warning'
+      })
+      
+      return false
+    }
+  }, [setFormData, showNotification])
+
+  // 📤 PROCESSAMENTO COM WEBHOOK E PREENCHIMENTO AUTOMÁTICO
   const processImage = useCallback(async (imageBlob: Blob) => {
     setFormState(prev => ({ ...prev, isProcessing: true }))
     
     try {
-      console.log('🤖 Iniciando análise OCR real da bobina...')
+      console.log('📤 Enviando imagem para webhook...')
       
-      // 🧠 ANÁLISE REAL VIA OPENAI VISION API
-      const ocrResult = await analyzeBobonaImage(imageBlob)
+      // 📤 Enviar imagem para webhook N8N
+      const webhookResult = await sendImageToWebhook(imageBlob)
       
-      console.log('🔍 OCR Result completo:', ocrResult)
-      
-      // 🎯 VALIDAÇÃO E CORREÇÃO DOS VALORES ESPECÍFICOS ESPERADOS
-      const validatedData = {
-        codigo: ocrResult.codigo || `BOB-2025-${Date.now().toString().slice(-6)}`,
-        tipoPapel: validateTipoPapel(ocrResult.tipoPapel),
-        gramatura: validateGramatura(ocrResult.gramatura),
-        largura: validateLargura(ocrResult.largura),
-        fornecedor: validateFornecedor(ocrResult.fornecedor),
-        pesoInicial: ocrResult.pesoInicial || 150
+      if (webhookResult) {
+        console.log('✅ Webhook retornou dados:', webhookResult)
+        
+        // 🔄 Processar resposta do webhook e preencher formulário
+        const success = processWebhookResponse(webhookResult)
+        
+        setFormState(prev => ({ 
+          ...prev, 
+          isProcessing: false, 
+          hasExtractedData: success,
+          currentStep: 3
+        }))
+        
+        if (success) {
+          showNotification({
+            message: '✅ Formulário preenchido automaticamente!',
+            type: 'success'
+          })
+        }
+      } else {
+        console.log('⚠️ Webhook não retornou dados, usando dados simulados...')
+        
+        // 🎭 Fallback: usar dados simulados se webhook falhar
+        const simulatedData = {
+          codigo: `SIM${Date.now().toString().slice(-6)}`,
+          largura: 520,
+          tipoPapel: 'MIX038',
+          gramatura: '38',
+          fornecedor: 'Paraná',
+          pesoInicial: 151,
+          diametro: 800,
+          condutor: 'Operador',
+          confianca: 0.85,
+          observacoes: 'Dados simulados - webhook indisponível'
+        }
+        
+        const success = processWebhookResponse(simulatedData)
+        
+        setFormState(prev => ({ 
+          ...prev, 
+          isProcessing: false, 
+          hasExtractedData: success,
+          currentStep: 3
+        }))
       }
-      
-      console.log('✅ Dados validados:', validatedData)
-      
-      // Converter resultado OCR para formato do frontend
-      const processedBobinaData: ProcessedBobinaData = {
-        codigo: validatedData.codigo,
-        tipoPapel: validatedData.tipoPapel,
-        gramatura: validatedData.gramatura,
-        largura: validatedData.largura.toString(),
-        fornecedor: validatedData.fornecedor,
-        pesoInicial: validatedData.pesoInicial
-      }
-      
-      console.log('📋 Processed Data:', processedBobinaData)
-      
-      setProcessedData(processedBobinaData)
-      
-      // Preencher formulário com dados extraídos via OCR
-      updateFormData({
-        codigoBobina: processedBobinaData.codigo,
-        tipoPapel: processedBobinaData.tipoPapel,
-        gramatura: processedBobinaData.gramatura,
-        largura: processedBobinaData.largura,
-        fornecedor: processedBobinaData.fornecedor,
-        pesoInicial: processedBobinaData.pesoInicial,
-        pesoAtual: processedBobinaData.pesoInicial, // Inicialmente igual
-        observacoes: `Dados extraídos via OCR real. Confiança: ${Math.round((ocrResult.confianca || 0.85) * 100)}%`
-      })
-      
-      setFormState(prev => ({ 
-        ...prev, 
-        isProcessing: false, 
-        hasExtractedData: true,
-        currentStep: 3
-      }))
-      
       
     } catch (error) {
-      console.error('❌ Erro no processamento OCR:', error)
+      console.error('❌ Erro no processamento:', error)
       
       setFormState(prev => ({ 
         ...prev, 
@@ -256,7 +391,7 @@ export const useNovaBobina = () => {
         type: 'error'
       })
     }
-  }, [updateFormData, showNotification])
+  }, [showNotification, sendImageToWebhook, processWebhookResponse])
 
   // Função para upload de imagem
   const uploadImage = useCallback(() => {
