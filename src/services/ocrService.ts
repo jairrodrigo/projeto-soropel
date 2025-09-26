@@ -231,11 +231,10 @@ export const analyzeBobonaImage = async (
   // Verificar se OpenAI está habilitado
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY
   
-  // 🔍 DEBUG - Adicionar logs para identificar problema
-  // ✅ Log removido para console limpo
-  console.log('- VITE_OPENAI_API_KEY existe:', !!openaiKey)
-  console.log('- Tamanho da key:', openaiKey?.length || 0)
-  console.log('- Primeiros 10 chars:', openaiKey?.substring(0, 10) || 'N/A')
+  // 🔍 DEBUG - Logs removidos para console limpo e segurança
+  // console.log('- VITE_OPENAI_API_KEY existe:', !!openaiKey)
+  // console.log('- Tamanho da key:', openaiKey?.length || 0)
+  // console.log('- Primeiros 10 chars:', openaiKey?.substring(0, 10) || 'N/A')
   
   if (!openaiKey) {
     console.warn('⚠️ OpenAI API Key não configurada - usando simulação')
@@ -303,15 +302,15 @@ export const analyzeBobonaImage = async (
       
       const result = JSON.parse(responseText) as OCRBobinaResult
       
-      // 🎯 DEBUG LOGS TEMPORÁRIOS - MONITORAMENTO ESPECÍFICO DOS CAMPOS ESPERADOS
-      console.log('🔍 [DEBUG] Resposta bruta OpenAI:', responseText)
-      console.log('🎯 [DEBUG] Campos extraídos:')
-      console.log('  - Fornecedor extraído:', result.fornecedor)
-      console.log('  - Largura extraída:', result.largura)
-      console.log('  - Tipo papel extraído:', result.tipoPapel)
-      console.log('  - Gramatura extraída:', result.gramatura)
-      console.log('  - Código extraído:', result.codigo)
-      console.log('  - Confiança:', result.confianca)
+      // 🎯 DEBUG LOGS TEMPORÁRIOS - Comentados para console limpo
+      // console.log('🔍 [DEBUG] Resposta bruta OpenAI:', responseText)
+      // console.log('🎯 [DEBUG] Campos extraídos:')
+      // console.log('  - Fornecedor extraído:', result.fornecedor)
+      // console.log('  - Largura extraída:', result.largura)
+      // console.log('  - Tipo papel extraído:', result.tipoPapel)
+      // console.log('  - Gramatura extraída:', result.gramatura)
+      // console.log('  - Código extraído:', result.codigo)
+      // console.log('  - Confiança:', result.confianca)
       
       // Validar estrutura da resposta
       if (typeof result.confianca !== 'number') {

@@ -122,8 +122,8 @@ export interface ModalState {
 // Props para componentes
 export interface MachineCardProps {
   machine: Machine
-  onToggleStatus: (machineId: number, currentStatus: MachineStatus) => void
-  onOpenConfig: (machineId: number) => void
+  onToggleStatus: (_machineId: number, _currentStatus: MachineStatus) => void
+  onOpenConfig: (_machineId: number) => void
 }
 
 export interface ModalPlanejamentoProps {
@@ -140,14 +140,14 @@ export interface ModalConfigurarProdutosProps {
   onClose: () => void
   machines: Machine[]
   configs: MachineConfig[]
-  onSaveConfig: (configs: MachineConfig[]) => void
+  onSaveConfig: (_configs: MachineConfig[]) => void
 }
 
 export interface ModalConfiguracaoMaquinaProps {
   isOpen: boolean
   onClose: () => void
   machine?: Machine
-  onSaveSettings: (settings: Partial<Machine>) => void
+  onSaveSettings: (_settings: Partial<Machine>) => void
 }
 
 // Types para Sistema IoT

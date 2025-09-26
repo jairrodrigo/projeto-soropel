@@ -96,7 +96,7 @@ export const ModalPlanejamento: React.FC<ModalPlanejamentoProps> = ({
 
     try {
       // Encontrar planejamento existente ou criar novo
-      let existingPlanning = plannings.find(p => p.machine_id === machineId)
+      const existingPlanning = plannings.find(p => p.machine_id === machineId)
       
       if (existingPlanning) {
         // Atualizar planejamento existente

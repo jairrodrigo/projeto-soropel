@@ -9,11 +9,8 @@ import type {
 } from '@/types'
 import { 
   refreshDashboardData,
-  testDashboardConnection,
-  type DashboardMetrics,
-  type ProductionData
+  testDashboardConnection
 } from '@/services/dashboardService'
-import type { Machine, Alert, Activity } from '@/types'
 
 interface DashboardState {
   // Data

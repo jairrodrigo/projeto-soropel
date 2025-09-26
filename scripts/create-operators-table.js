@@ -2,7 +2,7 @@
 // Execute com: node scripts/create-operators-table.js
 
 // Configurações do Supabase (hardcoded para este script)
-const supabaseUrl = 'https://dbruylvkqxbyrsnfrdpu.supabase.co'
+const supabaseUrl = 'https://chhtllsprlqvjeivspxq.supabase.co'
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRicnV5bHZrcXhieXJzbmZyZHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NDQyODQsImV4cCI6MjA2NzAyMDI4NH0.B-N8j8L6wbWHe5e6y3NHDy989F0Et9mAjESSv6REEQY'
 
 const createOperatorsTableSQL = `

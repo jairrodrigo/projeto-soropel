@@ -296,7 +296,7 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
       .select('id')
       .or(`name.eq.${bobinaData.paper_type_name},code.eq.${bobinaData.paper_type_name}`)
       
-    let existingPaperType = existingPaperTypes?.[0] || null
+    const existingPaperType = existingPaperTypes?.[0] || null
     // ✅ Log removido para console limpo
 
     if (searchPaperTypeError && searchPaperTypeError.code !== 'PGRST116') {

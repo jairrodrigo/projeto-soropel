@@ -3,30 +3,7 @@
 
 import { supabase, isSupabaseAvailable, createSupabaseUnavailableError } from '../lib/supabase'
 import type { DatabaseResult } from '../types/supabase'
-import type { Machine, Alert, Activity } from '../types/dashboard'
-
-// 🎯 TIPOS ESPECÍFICOS DO DASHBOARD
-export interface DashboardMetrics {
-  pedidosAndamento: number
-  bobinaemUso: number
-  maquinasAtivas: {
-    ativas: number
-    total: number
-    eficienciaMedia: number
-  }
-  sobrasHoje: number
-}
-
-export interface ProductionData {
-  metaDiaria: number
-  realizado: number
-  porcentagem: number
-  projecao: number
-  topProdutos: Array<{
-    nome: string
-    quantidade: number
-  }>
-}
+import type { Machine, Alert, Activity, DashboardMetrics, ProductionData } from '../types/dashboard'
 
 // 🔄 FUNÇÕES DE CONVERSÃO DE DADOS
 const convertSupabaseMachineToFrontend = (supabaseMachine: any): Machine => {

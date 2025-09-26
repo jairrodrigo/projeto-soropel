@@ -58,6 +58,29 @@ export const Sidebar: React.FC<{
         sidebarCollapsed ? 'w-[70px] p-1' : 'w-64 p-4'
       )}>
         
+        {/* Logo da empresa no topo da sidebar */}
+        <div className={cn(
+          'flex items-center mb-6 pt-2',
+          sidebarCollapsed ? 'justify-center px-1' : 'justify-start px-0'
+        )}>
+          <div className={cn(
+            'bg-white rounded-lg flex items-center justify-center transition-all duration-300',
+            sidebarCollapsed ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'
+          )}>
+            <img 
+              src="/logo-soropel.svg" 
+              alt="Logo Soropel" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          {!sidebarCollapsed && (
+            <div className="ml-3">
+              <h2 className="text-white font-bold text-lg">Soropel</h2>
+              <p className="text-gray-300 text-xs">Sistema de Gestão</p>
+            </div>
+          )}
+        </div>
+
         {/* Toggle Button - NO TOPO, na linha entre sidebar e página */}
         <button
           onClick={toggleSidebar}

@@ -1,7 +1,7 @@
 // Service para Configuração de Máquinas - Dados Reais do Banco
 // Sistema Soropel - Gestão Completa de Máquinas
 
-import { supabase } from '@/config/supabase'
+import { supabase } from '@/lib/supabase'
 
 export interface ProductFromDB {
   id: string
@@ -235,7 +235,7 @@ class MachineConfigurationService {
       }
 
       // Buscar pedidos atribuídos à máquina de forma simplificada
-      let assignedOrders: OrderForMachine[] = []
+      const assignedOrders: OrderForMachine[] = []
       
       try {
         const { data: orderItems } = await supabase

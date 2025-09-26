@@ -1,18 +1,12 @@
 // IoT Service - Sistema ESP32 Contador de Sacos
 // Sistema Soropel - Integração com Supabase
 
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import type { 
   IoTDevice, 
   ProductionCount, 
   DailyProductionSummary 
 } from '@/types/gestao-maquinas'
-
-// Configuração do Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export class IoTService {
   

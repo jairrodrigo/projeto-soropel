@@ -38,19 +38,8 @@ export interface Customer {
   updated_at: string
 }
 
-// 🏭 MÁQUINAS
-export interface Machine {
-  id: string
-  machine_number: number
-  name: string
-  type?: string
-  status: 'ativa' | 'manutencao' | 'inativa'
-  location?: string
-  capacity_per_hour?: number
-  active: boolean
-  created_at: string
-  updated_at: string
-}
+// 🏭 MÁQUINAS - Removido para evitar duplicação
+// Os tipos de máquinas estão definidos em types/gestao-maquinas.ts e types/dashboard.ts
 
 // 📋 PEDIDOS (ORDEM DE PRODUÇÃO)
 export interface Order {
@@ -167,34 +156,8 @@ export interface OrderFilters {
   date_to?: string
 }
 
-// 📊 DASHBOARD METRICS
-export interface DashboardMetrics {
-  orders: {
-    total: number
-    pending: number
-    in_production: number
-    completed: number
-    late: number
-  }
-  production: {
-    today_quantity: number
-    week_quantity: number
-    month_quantity: number
-    efficiency_percentage: number
-  }
-  machines: {
-    active: number
-    maintenance: number
-    total_capacity: number
-    current_usage: number
-  }
-  inventory: {
-    products_count: number
-    low_stock_alerts: number
-    rolls_active: number
-    rolls_low: number
-  }
-}
+// 📊 DASHBOARD METRICS - Removido para evitar duplicação
+// Os tipos de dashboard estão definidos em types/dashboard.ts
 
 // 🎯 API RESPONSES
 export interface ApiResponse<T> {

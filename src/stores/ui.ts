@@ -51,34 +51,34 @@ export const useUIStore = create<UIState>()(
       toggleMobileMenu: () =>
         set((state) => ({ mobileMenuOpen: !state.mobileMenuOpen })),
         
-      showNotification: (notification) => {
+      showNotification: (_notification) => {
         const id = Math.random().toString(36).substr(2, 9)
-        const newNotification = { id, ...notification }
+        const newNotification = { id, ..._notification }
         
         set((state) => ({
           notifications: [...state.notifications, newNotification]
         }))
         
         // Auto-remove after duration
-        const duration = notification.duration || 4000
+        const duration = _notification.duration || 4000
         setTimeout(() => {
           get().removeNotification(id)
         }, duration)
       },
       
-      removeNotification: (id) =>
+      removeNotification: (_id) =>
         set((state) => ({
-          notifications: state.notifications.filter(n => n.id !== id)
+          notifications: state.notifications.filter(n => n.id !== _id)
         })),
         
-      openModal: (modal) =>
+      openModal: (_modal) =>
         set((state) => ({
-          modals: { ...state.modals, [modal]: true }
+          modals: { ...state.modals, [_modal]: true }
         })),
         
-      closeModal: (modal) =>
+      closeModal: (_modal) =>
         set((state) => ({
-          modals: { ...state.modals, [modal]: false }
+          modals: { ...state.modals, [_modal]: false }
         })),
         
       closeAllModals: () =>

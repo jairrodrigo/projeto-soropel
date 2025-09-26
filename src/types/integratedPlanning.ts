@@ -165,7 +165,7 @@ export interface PlanningSuggestion {
   }
 }
 
-export default {
+export {
   WeeklyPlanningComplete,
   PlannedOrderItem,
   MachineWithPlanning,

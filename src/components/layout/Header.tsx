@@ -50,8 +50,12 @@ export const Header: React.FC<HeaderProps> = ({
           </Button>
 
           {/* Logo and title */}
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <LayoutDashboard className="w-6 h-6" />
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
+            <img 
+              src="/logo-soropel.svg" 
+              alt="Logo Soropel" 
+              className="w-full h-full object-contain"
+            />
           </div>
           
           <div>
