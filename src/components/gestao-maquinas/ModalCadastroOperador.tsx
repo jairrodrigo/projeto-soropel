@@ -32,7 +32,7 @@ interface FormData {
   phone: string
   email: string
   role: 'operador' | 'supervisor' | 'tecnico' | 'manutencao'
-  shift: 'manha' | 'tarde' | 'noite' | 'integral'
+  shift: 'manha' | 'tarde' | 'noite' | 'unico' | 'integral'
   machine_ids: number[]
 }
 
@@ -69,6 +69,7 @@ const SHIFTS = [
   { value: 'manha', label: 'Manhã (06:00 - 14:00)' },
   { value: 'tarde', label: 'Tarde (14:00 - 22:00)' },
   { value: 'noite', label: 'Noite (22:00 - 06:00)' },
+  { value: 'unico', label: 'Turno Único (07:00 - 17:00/18:00 + H.Extra)' },
   { value: 'integral', label: 'Integral (Flexível)' }
 ] as const
 

@@ -19,7 +19,7 @@ CREATE TABLE operators (
     role IN ('operador', 'supervisor', 'tecnico', 'manutencao')
   ),
   shift TEXT NOT NULL DEFAULT 'manha' CHECK (
-    shift IN ('manha', 'tarde', 'noite', 'integral')
+    shift IN ('manha', 'tarde', 'noite', 'unico', 'integral')
   ),
   
   -- MÁQUINAS QUE PODE OPERAR (ARRAY DE IDs)
@@ -60,9 +60,10 @@ INSERT INTO operators (name, cpf, phone, role, shift, machine_ids) VALUES
 ('Carlos Oliveira', '34567890123', '(11) 99999-3333', 'supervisor', 'manha', ARRAY[1, 2, 3, 4, 5, 6, 7, 8, 9]),
 ('Ana Costa', '45678901234', '(11) 99999-4444', 'operador', 'noite', ARRAY[7, 8]),
 ('Pedro Souza', '56789012345', '(11) 99999-5555', 'tecnico', 'integral', ARRAY[9]),
-('Lucia Ferreira', '67890123456', '(11) 99999-6666', 'operador', 'manha', ARRAY[1, 2]),
+('Lucia Ferreira', '67890123456', '(11) 99999-6666', 'operador', 'unico', ARRAY[1, 2]),
 ('Roberto Lima', '78901234567', '(11) 99999-7777', 'manutencao', 'integral', ARRAY[1, 2, 3, 4, 5, 6, 7, 8, 9]),
-('Fernanda Alves', '89012345678', '(11) 99999-8888', 'operador', 'tarde', ARRAY[3, 4, 5]);
+('Fernanda Alves', '89012345678', '(11) 99999-8888', 'operador', 'tarde', ARRAY[3, 4, 5]),
+('José Santos', '90123456789', '(11) 99999-9999', 'operador', 'unico', ARRAY[6, 7, 8]);
 
 -- =============================================
 -- COMENTÁRIOS DA TABELA
@@ -72,7 +73,7 @@ COMMENT ON TABLE operators IS 'Tabela de operadores do sistema Soropel';
 COMMENT ON COLUMN operators.name IS 'Nome completo do operador';
 COMMENT ON COLUMN operators.cpf IS 'CPF do operador (único, opcional)';
 COMMENT ON COLUMN operators.role IS 'Função: operador, supervisor, tecnico, manutencao';
-COMMENT ON COLUMN operators.shift IS 'Turno: manha, tarde, noite, integral';
+COMMENT ON COLUMN operators.shift IS 'Turno: manha, tarde, noite, unico, integral';
 COMMENT ON COLUMN operators.machine_ids IS 'Array com IDs das máquinas que pode operar';
 COMMENT ON COLUMN operators.active IS 'Se o operador está ativo no sistema';
 

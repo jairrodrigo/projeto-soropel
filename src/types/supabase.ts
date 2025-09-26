@@ -119,7 +119,7 @@ export interface Operator {
   phone?: string
   email?: string
   role: 'operador' | 'supervisor' | 'tecnico' | 'manutencao'
-  shift: 'manha' | 'tarde' | 'noite' | 'integral'
+  shift: 'manha' | 'tarde' | 'noite' | 'unico' | 'integral'
   machine_ids?: number[]
   active: boolean
   created_at: string

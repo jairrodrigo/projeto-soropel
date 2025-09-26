@@ -31,7 +31,7 @@ interface ListagemOperadoresProps {
 }
 
 type FilterRole = 'all' | 'operador' | 'supervisor' | 'tecnico' | 'manutencao'
-type FilterShift = 'all' | 'manha' | 'tarde' | 'noite' | 'integral'
+type FilterShift = 'all' | 'manha' | 'tarde' | 'noite' | 'unico' | 'integral'
 type FilterStatus = 'all' | 'active' | 'inactive'
 
 interface Filters {
@@ -52,6 +52,7 @@ const SHIFT_LABELS = {
   manha: 'Manhã',
   tarde: 'Tarde',
   noite: 'Noite',
+  unico: 'Turno Único',
   integral: 'Integral'
 }
 
@@ -66,6 +67,7 @@ const SHIFT_COLORS = {
   manha: 'bg-yellow-100 text-yellow-800',
   tarde: 'bg-orange-100 text-orange-800',
   noite: 'bg-indigo-100 text-indigo-800',
+  unico: 'bg-emerald-100 text-emerald-800',
   integral: 'bg-gray-100 text-gray-800'
 }
 
@@ -295,6 +297,7 @@ export const ListagemOperadores: React.FC<ListagemOperadoresProps> = ({
                   <option value="manha">Manhã</option>
                   <option value="tarde">Tarde</option>
                   <option value="noite">Noite</option>
+                  <option value="unico">Turno Único</option>
                   <option value="integral">Integral</option>
                 </select>
 

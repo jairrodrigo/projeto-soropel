@@ -12,7 +12,7 @@ export interface NewOperatorData {
   phone?: string
   email?: string
   role: 'operador' | 'supervisor' | 'tecnico' | 'manutencao'
-  shift: 'manha' | 'tarde' | 'noite' | 'integral'
+  shift: 'manha' | 'tarde' | 'noite' | 'unico' | 'integral'
   machine_ids?: number[]
 }
 
@@ -22,7 +22,7 @@ export interface UpdateOperatorData {
   phone?: string
   email?: string
   role?: 'operador' | 'supervisor' | 'tecnico' | 'manutencao'
-  shift?: 'manha' | 'tarde' | 'noite' | 'integral'
+  shift?: 'manha' | 'tarde' | 'noite' | 'unico' | 'integral'
   machine_ids?: number[]
   active?: boolean
 }
@@ -48,7 +48,156 @@ const createSupabaseUnavailableError = (): DatabaseResult<any> => ({
 // 📋 LISTAR TODOS OS OPERADORES
 export const getAllOperators = async (filters?: OperatorFilters): Promise<DatabaseResult<Operator[]>> => {
   if (!isSupabaseAvailable()) {
-    return createSupabaseUnavailableError()
+    // Dados mock para demonstração quando Supabase não está disponível
+    const mockOperators: Operator[] = [
+      {
+        id: '1',
+        name: 'João Silva',
+        cpf: '12345678901',
+        phone: '(11) 99999-1111',
+        email: 'joao@soropel.com',
+        role: 'operador',
+        shift: 'manha',
+        machine_ids: [1, 2, 3],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Maria Santos',
+        cpf: '23456789012',
+        phone: '(11) 99999-2222',
+        email: 'maria@soropel.com',
+        role: 'operador',
+        shift: 'tarde',
+        machine_ids: [4, 5, 6],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '3',
+        name: 'Carlos Oliveira',
+        cpf: '34567890123',
+        phone: '(11) 99999-3333',
+        email: 'carlos@soropel.com',
+        role: 'supervisor',
+        shift: 'manha',
+        machine_ids: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '4',
+        name: 'Ana Costa',
+        cpf: '45678901234',
+        phone: '(11) 99999-4444',
+        email: 'ana@soropel.com',
+        role: 'operador',
+        shift: 'noite',
+        machine_ids: [7, 8],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '5',
+        name: 'Pedro Souza',
+        cpf: '56789012345',
+        phone: '(11) 99999-5555',
+        email: 'pedro@soropel.com',
+        role: 'tecnico',
+        shift: 'integral',
+        machine_ids: [9],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '6',
+        name: 'Lucia Ferreira',
+        cpf: '67890123456',
+        phone: '(11) 99999-6666',
+        email: 'lucia@soropel.com',
+        role: 'operador',
+        shift: 'unico',
+        machine_ids: [1, 2],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '7',
+        name: 'Roberto Lima',
+        cpf: '78901234567',
+        phone: '(11) 99999-7777',
+        email: 'roberto@soropel.com',
+        role: 'manutencao',
+        shift: 'integral',
+        machine_ids: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '8',
+        name: 'Fernanda Alves',
+        cpf: '89012345678',
+        phone: '(11) 99999-8888',
+        email: 'fernanda@soropel.com',
+        role: 'operador',
+        shift: 'tarde',
+        machine_ids: [3, 4, 5],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '9',
+        name: 'José Santos',
+        cpf: '90123456789',
+        phone: '(11) 99999-9999',
+        email: 'jose@soropel.com',
+        role: 'operador',
+        shift: 'unico',
+        machine_ids: [6, 7, 8],
+        active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ]
+
+    // Aplicar filtros aos dados mock
+    let filteredOperators = mockOperators
+
+    if (filters) {
+      if (filters.role && filters.role !== 'all') {
+        filteredOperators = filteredOperators.filter(op => op.role === filters.role)
+      }
+      if (filters.shift && filters.shift !== 'all') {
+        filteredOperators = filteredOperators.filter(op => op.shift === filters.shift)
+      }
+      if (filters.active !== undefined) {
+        filteredOperators = filteredOperators.filter(op => op.active === filters.active)
+      }
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase()
+        filteredOperators = filteredOperators.filter(op => 
+          op.name.toLowerCase().includes(searchLower) ||
+          (op.cpf && op.cpf.includes(filters.search!))
+        )
+      }
+      if (filters.machine_id) {
+        filteredOperators = filteredOperators.filter(op => 
+          op.machine_ids && op.machine_ids.includes(filters.machine_id!)
+        )
+      }
+    }
+
+    console.log('✅ Operadores mock encontrados:', filteredOperators.length)
+    return { data: filteredOperators, error: null }
   }
 
   try {

@@ -412,21 +412,16 @@ export const ModalIoTSystem: React.FC<ModalIoTSystemProps> = ({
                   </div>
                 </div>
 
+                {/* Performance por Turno - Incluindo Turno Único */}
                 <div className="mt-4 grid md:grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-lg border border-gray-200">
-                    <h5 className="font-medium text-gray-700 mb-2">⚡ Performance por Turno</h5>
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                    <h5 className="font-medium text-gray-700 mb-3 flex items-center">
+                      ⚡ Performance por Turno
+                    </h5>
                     <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Manhã (06h-14h):</span>
-                        <span className="text-sm font-bold text-green-600">14.2/min</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Tarde (14h-22h):</span>
-                        <span className="text-sm font-bold text-yellow-600">11.8/min</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Noite (22h-06h):</span>
-                        <span className="text-sm font-bold text-blue-600">9.5/min</span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600 font-medium">Único (07h-17h/18h):</span>
+                        <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">13.8/min</span>
                       </div>
                     </div>
                   </div>
@@ -626,69 +621,29 @@ export const ModalIoTSystem: React.FC<ModalIoTSystemProps> = ({
                   <span>⏰ Análise Detalhada por Turnos</span>
                 </h4>
                 
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-lg border border-yellow-200">
-                    <h5 className="font-medium text-orange-800 mb-3">🌅 Turno Manhã (06h-14h)</h5>
+                <div className="grid md:grid-cols-1 gap-6">
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-200">
+                    <h5 className="font-medium text-emerald-800 mb-3">⭐ Turno Único (07h-17h/18h)</h5>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Média/min:</span>
-                        <span className="text-sm font-bold text-orange-600">14.2</span>
+                        <span className="text-sm font-bold text-emerald-600">13.8</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Total batidas:</span>
-                        <span className="text-sm font-bold">6.816</span>
+                        <span className="text-sm font-bold">8.280</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Eficiência:</span>
-                        <span className="text-sm font-bold text-green-600">92%</span>
+                        <span className="text-sm font-bold text-green-600">88%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Paradas:</span>
-                        <span className="text-sm font-bold text-red-600">2 (18min)</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                    <h5 className="font-medium text-blue-800 mb-3">☀️ Turno Tarde (14h-22h)</h5>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Média/min:</span>
-                        <span className="text-sm font-bold text-blue-600">11.8</span>
+                        <span className="text-sm font-bold text-yellow-600">3 (35min)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total batidas:</span>
-                        <span className="text-sm font-bold">5.664</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Eficiência:</span>
-                        <span className="text-sm font-bold text-yellow-600">78%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Paradas:</span>
-                        <span className="text-sm font-bold text-red-600">4 (52min)</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
-                    <h5 className="font-medium text-purple-800 mb-3">🌙 Turno Noite (22h-06h)</h5>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Média/min:</span>
-                        <span className="text-sm font-bold text-purple-600">9.5</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total batidas:</span>
-                        <span className="text-sm font-bold">4.560</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Eficiência:</span>
-                        <span className="text-sm font-bold text-orange-600">65%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Paradas:</span>
-                        <span className="text-sm font-bold text-red-600">6 (85min)</span>
+                        <span className="text-sm text-gray-600">H. Extra:</span>
+                        <span className="text-sm font-bold text-emerald-600">+1h (828 bat.)</span>
                       </div>
                     </div>
                   </div>
@@ -698,16 +653,14 @@ export const ModalIoTSystem: React.FC<ModalIoTSystemProps> = ({
                   <h5 className="font-medium text-gray-800 mb-3">💡 Insights Automáticos:</h5>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-1 text-sm">
-                      <p>• <strong>Melhor turno:</strong> Manhã com 92% de eficiência</p>
-                      <p>• <strong>Turno crítico:</strong> Noite precisa de atenção (65% eficiência)</p>
-                      <p>• <strong>Paradas excessivas:</strong> Tarde e noite somam 137min paradas</p>
-                      <p>• <strong>Oportunidade:</strong> Reduzir paradas pode aumentar +15% produção</p>
+                      <p>• <strong>Turno único:</strong> 88% eficiência com hora extra produtiva</p>
+                      <p>• <strong>Performance consistente:</strong> Evita quedas de produtividade</p>
+                      <p>• <strong>Paradas controladas:</strong> Apenas 3 paradas em 35min</p>
                     </div>
                     <div className="space-y-1 text-sm">
-                      <p>• <strong>Tendência:</strong> Performance cai 30% após 14h</p>
-                      <p>• <strong>Recomendação:</strong> Revisar processos turno tarde/noite</p>
-                      <p>• <strong>Meta viável:</strong> Atingir 85% eficiência geral</p>
-                      <p>• <strong>Potencial:</strong> +2.100 batidas/dia com otimização</p>
+                      <p>• <strong>Vantagem operacional:</strong> Melhor controle de qualidade</p>
+                      <p>• <strong>Flexibilidade:</strong> Hora extra quando necessário</p>
+                      <p>• <strong>Eficiência:</strong> Redução de setup entre turnos</p>
                     </div>
                   </div>
                 </div>
