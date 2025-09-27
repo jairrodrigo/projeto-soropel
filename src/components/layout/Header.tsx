@@ -52,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Logo and title */}
           <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
             <img 
-              src="/logo-soropel.svg" 
+              src="/logo_soropel.png" 
               alt="Logo Soropel" 
               className="w-full h-full object-contain"
             />

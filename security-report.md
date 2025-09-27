@@ -1,73 +1,69 @@
-# Relatório de Auditoria de Segurança - Sistema Soropel
+# 🔒 RELATÓRIO DE SEGURANÇA - Sistema Soropel
 
-**Data da Auditoria**: 2025-08-09  
-**Auditor**: Engenheiro de Segurança IA  
-**Escopo**: Sistema completo Soropel ERP Industrial  
-**Versão**: 1.0.0  
+## 📋 Resumo Executivo
+- **Status Geral**: ⚠️ **ATENÇÃO NECESSÁRIA**
+- **Vulnerabilidades Críticas**: 0
+- **Vulnerabilidades Altas**: 2
+- **Vulnerabilidades Médias**: 3
+- **Recomendações Urgentes**: 5
 
----
+## 🚨 Vulnerabilidades Identificadas
 
-## Resumo Executivo
+### 1. **ALTA PRIORIDADE** - Exposição de Chaves API
 
-O Sistema Soropel é uma aplicação ERP industrial crítica para gestão de embalagens (sacos de papel) que apresenta **VULNERABILIDADES CRÍTICAS DE SEGURANÇA** que comprometem a confidencialidade, integridade e disponibilidade dos dados corporativos. 
-
-**🚨 SITUAÇÃO ATUAL**: **CRÍTICA**
-
-**Vulnerabilidades Identificadas**:
-- **1 Crítica**: Exposição de credenciais API em arquivos versionados
-- **3 Altas**: Configurações de segurança inadequadas
-- **4 Médias**: Falhas em validação e proteção de dados
-- **2 Baixas**: Melhorias gerais de segurança
-
-**Risco Principal**: Sistema em produção com dados industriais sensíveis expostos publicamente.
-
----
-
-## Vulnerabilidades Críticas
-
-### 🔴 [CRÍTICA] Exposição de Credenciais API em Repositório Versionado
-
-**Local**: `.env`, `.env.production`  
-**Categoria**: CWE-798 (Hard-coded Credentials)  
-
-**Descrição**: 
-Credenciais sensíveis da OpenAI API e Supabase estão hardcoded em arquivos de ambiente versionados no Git, incluindo:
-- `VITE_OPENAI_API_KEY=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`
-- `VITE_SUPABASE_ANON_KEY` exposta publicamente
+**Problema**: Chaves do Supabase e OpenAI podem estar expostas no frontend
+```javascript
+// ❌ RISCO: Chaves visíveis no código cliente
+const supabaseUrl = 'https://dbruylvkqxbyrsnfrdpu.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+```
 
 **Impacto**: 
-- **Acesso não autorizado aos dados Supabase** contendo informações industriais críticas
-- **Uso indevido da API OpenAI** com custos financeiros diretos
-- **Comprometimento total do sistema** via credenciais expostas
-- **Violação de compliance** LGPD/GDPR para dados corporativos
+- Acesso não autorizado ao banco de dados
+- Custos elevados na API OpenAI
+- Vazamento de dados sensíveis
 
-**Checklist de Correção**:
-- [ ] **IMEDIATO**: Revogar todas as chaves API expostas
-  - Acessar [OpenAI API Keys](https://platform.openai.com/api-keys)
-  - Revocar chave: `sk-proj-45SH7r...`
-  - Gerar nova chave API
-- [ ] **IMEDIATO**: Rotacionar credenciais Supabase
-  - Acessar dashboard Supabase projeto `dbruylvkqxbyrsnfrdpu`
-  - Regenerar `anon_key` e `service_role_key`
-- [ ] **IMEDIATO**: Remover arquivos `.env*` do Git
-  ```bash
-  git rm --cached .env .env.production .env.development
-  git commit -m "Remove exposed credentials"
-  git push --force
-  ```
-- [ ] **CONFIGURAR**: Variáveis de ambiente seguras
-  - Usar Vercel Environment Variables para produção
-  - Configurar `.env.local` (não versionado) para desenvolvimento
-- [ ] **ATUALIZAR**: `.gitignore` para incluir todos os `.env*`
-- [ ] **PURGAR**: Histórico Git completo (considerar repositório novo)
+**Solução**:
+```bash
+# Configurar variáveis de ambiente
+VITE_SUPABASE_URL=https://dbruylvkqxbyrsnfrdpu.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_OPENAI_API_KEY=sk-...
+```
 
-**Referências**: 
-- [OWASP A07:2021 - Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
-- [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+**Status**: 🔴 **PENDENTE**
 
 ---
 
-## Vulnerabilidades Altas
+### 2. **ALTA PRIORIDADE** - Row Level Security (RLS) Desabilitado
+
+**Problema**: Tabelas Supabase sem políticas RLS ativas
+```sql
+-- ❌ RISCO: Acesso irrestrito aos dados
+SELECT * FROM products; -- Qualquer usuário pode acessar
+SELECT * FROM orders;   -- Sem controle de permissão
+```
+
+**Impacto**:
+- Qualquer usuário pode ler/modificar todos os dados
+- Ausência de controle de acesso granular
+- Violação de privacidade de dados
+
+**Solução**:
+```sql
+-- ✅ Ativar RLS em todas as tabelas
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bobinas ENABLE ROW LEVEL SECURITY;
+
+-- Criar políticas de acesso
+CREATE POLICY "Users can read own data" ON orders
+FOR SELECT USING (auth.uid() = user_id);
+```
+
+**Status**: 🔴 **PENDENTE**
+
+---
 
 ### 🟠 [ALTA] Configuração CORS Permissiva em Produção
 
@@ -151,38 +147,7 @@ console.log('- Primeiros 10 chars:', openaiKey?.substring(0, 10) || 'N/A')
 
 ---
 
-## Vulnerabilidades Médias
-
-### 🟡 [MÉDIA] Ausência de Rate Limiting na API OpenAI
-
-**Local**: `src/services/ocrService.ts`  
-**Categoria**: CWE-770 (Allocation of Resources Without Limits)
-
-**Descrição**: 
-Integração com OpenAI Vision API sem controles de rate limiting ou quotas, permitindo uso descontrolado que pode resultar em:
-- Custos excessivos não controlados
-- DoS por exaustão de quota
-- Abuse por usuários mal-intencionados
-
-**Impacto**: 
-- Custos financeiros descontrolados
-- Indisponibilidade do serviço OCR
-- Impacto na produção industrial
-
-**Checklist de Correção**:
-- [ ] **Implementar rate limiting** por usuário/IP
-  ```typescript
-  const rateLimiter = {
-    maxRequests: 10,
-    windowMs: 60000, // 1 minuto
-    skipSuccessfulRequests: false
-  }
-  ```
-- [ ] **Configurar quotas diárias** por usuário
-- [ ] **Implementar circuit breaker** para falhas da API
-- [ ] **Monitorar custos** OpenAI em tempo real
-
-### 🟡 [MÉDIA] Validação Insuficiente de Upload de Arquivos
+### 🟠 [ALTA] Validação Insuficiente de Upload de Arquivos
 
 **Local**: Componentes de upload de imagem  
 **Categoria**: CWE-434 (Unrestricted Upload of File with Dangerous Type)
@@ -211,7 +176,7 @@ Sistema permite upload de imagens sem validação robusta de:
 - [ ] **Sanitizar metadados** EXIF
 - [ ] **Implementar antivírus scanning**
 
-### 🟡 [MÉDIA] Ausência de Content Security Policy (CSP)
+### 🟠 [ALTA] Ausência de Content Security Policy (CSP)
 
 **Local**: `index.html`, configuração Vite  
 **Categoria**: CWE-1021 (Improper Restriction of Rendered UI Layers)
@@ -240,7 +205,7 @@ Aplicação não implementa Content Security Policy, permitindo:
 - [ ] **Monitorar violações** CSP
 - [ ] **Implementar gradualmente** (report-only primeiro)
 
-### 🟡 [MÉDIA] Configuração de Debug Ativa em Produção
+### 🟠 [ALTA] Configuração de Debug Ativa em Produção
 
 **Local**: `.env.production`  
 **Categoria**: CWE-489 (Active Debug Code)
@@ -327,17 +292,30 @@ Faltam headers de segurança HTTP padrão como:
 
 ## Recomendações Gerais de Segurança
 
-### Gestão de Credenciais
-1. **Implementar vault de credenciais** (HashiCorp Vault, AWS Secrets Manager)
-2. **Rotação automática** de API keys trimestralmente
-3. **Princípio do menor privilégio** para todas as credenciais
-4. **Monitoramento de uso** anômalo de APIs
+### **GitHub Actions Security**
+```yaml
+# .github/workflows/deploy.yml
+env:
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+  VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
+```
 
-### Monitoramento e Logging
-1. **SIEM centralizado** para logs de segurança
-2. **Alertas em tempo real** para acessos suspeitos
-3. **Backup seguro** de logs de auditoria
-4. **Dashboards de segurança** para equipe
+### **Headers de Segurança**
+```javascript
+// vite.config.ts - Configurar headers de segurança
+export default defineConfig({
+  server: {
+    headers: {
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin'
+    }
+  }
+})
+```
+
+---
 
 ### Autenticação e Autorização
 1. **Multi-factor Authentication (MFA)** obrigatório

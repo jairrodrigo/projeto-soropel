@@ -24,7 +24,7 @@ function App() {
         <ul>
           <li>✅ React carregando</li>
           <li>✅ TypeScript compilando</li>  
-          <li>✅ Vercel deployando</li>
+          <li>✅ GitHub Actions funcionando</li>
           <li>✅ CSS aplicado</li>
         </ul>
         

@@ -4,10 +4,9 @@
 - **Tipo**: Dashboard de Produção Industrial + OCR
 - **Propósito**: Sistema de gestão de produção para Soropel (bobinas, pedidos, máquinas)
 - **Stack**: React 18, TypeScript, TailwindCSS, Supabase, OpenAI Vision API
-- **Status**: ✅ **100% FUNCIONAL** - Deploy ativo, OCR real, Todas funcionalidades integradas ao Supabase
+- **Status**: ✅ **100% FUNCIONAL** - GitHub Actions ativo, OCR real, Todas funcionalidades integradas ao Supabase
 
 ## 🌐 URLs do Projeto
-- **🟢 Produção**: https://projetosoropel-d9fjp7dxo-jair-s-projects-53aa48be.vercel.app
 - **🔵 Local**: http://localhost:3000 (Vite dev server ativo)
 - **📂 GitHub**: https://github.com/jairrodrigo/sistema-soropel
 - **🗄️ Supabase**: dbruylvkqxbyrsnfrdpu.supabase.co (projeto: produção soropel)
@@ -273,17 +272,15 @@ npx vercel --prod    # Deploy manual Vercel
 
 ## 🚀 Deploy Status
 
-### **✅ DEPLOY ATIVO:**
-- **URL**: https://projetosoropel-d9fjp7dxo-jair-s-projects-53aa48be.vercel.app
-- **Status**: ● Ready (build 12s)
-- **Branch**: develop (staging)
-- **Last Deploy**: 28/07/2025 08:00 UTC
+### **✅ GITHUB ACTIONS ATIVO:**
+- **Status**: ● CI/CD configurado
+- **Branch**: main (produção)
+- **Workflow**: Test & Build automático
 
 ### **🔄 Git Status:**
-- **Branch atual**: develop
-- **Último commit**: 5203c46 (OCR real + Supabase)
+- **Branch atual**: main
 - **Status**: Working tree clean
-- **Remote**: origin/develop up to date
+- **Remote**: origin/main up to date
 
 ## 📝 Notas de Desenvolvimento
 
@@ -303,14 +300,11 @@ npx vercel --prod    # Deploy manual Vercel
 - OpenAI API tem custos por requisição
 - Supabase free tier tem limitações
 - 2 vulnerabilidades npm moderadas (não críticas)
-- Cache Vercel ocasionalmente precisa refresh
 
 ## 🔗 Links Importantes
 
 - **📂 Repositório**: https://github.com/jairrodrigo/sistema-soropel
-- **🌐 Deploy**: https://projetosoropel-d9fjp7dxo-jair-s-projects-53aa48be.vercel.app
 - **🗄️ Supabase Dashboard**: https://supabase.com/dashboard/project/dbruylvkqxbyrsnfrdpu
-- **📊 Vercel Dashboard**: https://vercel.com/jair-s-projects-53aa48be/projeto_soropel
 - **📋 Planilha Original**: C:\Users\jairr\Desktop\jair.cloud\2025_CONTROLE_PRODUCAO.xlsx
 
 ## 🎉 Resumo Executivo
@@ -318,76 +312,6 @@ npx vercel --prod    # Deploy manual Vercel
 **Sistema Soropel está 100% funcional** com:
 - ✅ **4 páginas completas** e responsivas
 - ✅ **OCR real funcionando** (OpenAI Vision API - AMBAS as páginas)
-- ✅ **Base de dados completa** (12 tabelas + 424 produtos)
-- ✅ **Deploy ativo** e estável
-- ✅ **Código profissional** (TypeScript + testes)
-- ✅ **NOVO PEDIDO 100% INTEGRADO** (Supabase + OCR real)
-
-**🚀 MILESTONE ATINGIDO**: Todas as funcionalidades principais 100% conectadas ao Supabase!
-
-## 🔥 Última Integração - 04/08/2025
-
-**✅ SISTEMA IoT ESP32 - CONTADOR DE SACOS EM TEMPO REAL**:
-- **Infraestrutura completa**: 3 novas tabelas Supabase (iot_devices, production_counting, daily_production_summary)
-- **Edge Function ativa**: `/functions/v1/iot-contador-sacos` para receber dados ESP32
-- **Modal IoT System**: ModalIoTSystem.tsx (670 linhas) - dashboard + configuração + documentação
-- **Service IoT**: iotService.ts (380 linhas) - integração completa Supabase
-- **Botão "Sistema IoT"** adicionado na página Gestão de Máquinas
-
-**📱 INTERFACE COMPLETA**:
-- **Dashboard**: contadores tempo real, velocidade, metas, eficiência
-- **Dispositivos**: gestão de ESP32, status online/offline, IPs
-- **Configuração**: código Arduino, guia instalação, especificações técnicas
-- **Auto-refresh**: atualização a cada 5 segundos
-- **Responsivo**: funciona em desktop, tablet, mobile
-
-**🔧 ESPECIFICAÇÕES TÉCNICAS**:
-- **Hardware**: ESP32 + sensor TCRT5000 + resistores
-- **Custo**: R$ 50-70 por conjunto completo
-- **Conectividade**: WiFi 2.4GHz, HTTP POST para Supabase
-- **Precisão**: >99% detecção, <50ms resposta
-- **Velocidade máxima**: 200 sacos/minuto
-
-**✅ CONFIGURAÇÃO DE PRODUTOS DAS MÁQUINAS - DADOS REAIS**:
-- ModalConfigurarProdutos.tsx completamente reescrito (422 linhas)
-- Integração com productsService.getProducts() → **288 produtos reais**
-- Interface moderna: busca + seleção intuitiva + gestão visual
-- User flow: seleciona máquina → clica produtos → atribui/remove
-- Loading states + error handling robusto
-- Build passou sem erros (5.65s)
-
-**📋 FUNCIONALIDADE COMPLETA**:
-- **Produtos disponíveis**: 288 produtos reais da tabela Supabase
-- **Busca inteligente**: por nome, código Soropel, peso
-- **Atribuição visual**: clique simples para atribuir/remover
-- **9 máquinas configuráveis**: SEM IMPRESSÃO, COM IMPRESSÃO, ESPECIAL
-- **Validação**: impede duplicatas, feedback visual
-
-**✅ GESTÃO DE PEDIDOS CONECTADA AO SUPABASE**:
-- useGestaoPedidosStore agora usa ordersService.getOrders()
-- Funções de conversão automática entre tipos Supabase ↔ Store
-- Fallback inteligente para mockData se Supabase indisponível
-- Build passou sem erros (7.00s)
-- Interface mantém compatibilidade total
-
-**📋 DETALHES TÉCNICOS**:
-- Arquivos criados: 
-  - `src/components/gestao-maquinas/ModalIoTSystem.tsx` (670 linhas)
-  - `src/services/iotService.ts` (380 linhas)
-  - Edge Function: `iot-contador-sacos` (ativa)
-  - Migration: `create_iot_system_tables` (15 tabelas total)
-- Tipos adicionados: IoTDevice, ProductionCount, DailyProductionSummary
-- Error handling robusto com logs detalhados
-- Sistema de fallback para dados simulados durante desenvolvimento
-
-**🐛 CORREÇÃO DE BUG - MESMO DIA**:
-- **Problema**: Campo `weight_display` não existia na tabela products
-- **Solução**: Corrigido para usar `weight_value` + `weight_unit`
-- **Investigação**: Teste direto revelou estrutura real (288 produtos ativos)
-- **Resultado**: Modal de configuração agora carrega produtos corretamente
-
----
-*Última atualização: 04/08/2025 21:45 UTC - DevIA Agent*
-*Sistema IoT ESP32: ✅ IMPLEMENTADO - Dashboard + Edge Functions + Documentação completa*
-*Servidor local: http://localhost:3000 (ativo em 332ms)*
-*Deploy: ● Ready em produção*
+- ✅ **GitHub Actions** configurado para CI/CD
+- ✅ **Supabase integrado** com dados reais
+- ✅ **Deploy automático** via GitHub
