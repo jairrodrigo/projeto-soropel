@@ -1,16 +1,18 @@
 const CACHE_NAME = 'soropel-v1';
+const BASE_PATH = '/projeto-soropel';
+
 const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/favicon.ico',
-  '/android-chrome-192x192.png',
-  '/android-chrome-512x512.png',
-  '/apple-touch-icon.png'
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/android-chrome-192x192.png`,
+  `${BASE_PATH}/android-chrome-512x512.png`,
+  `${BASE_PATH}/apple-touch-icon.png`,
+  `${BASE_PATH}/favicon-32x32.png`,
+  `${BASE_PATH}/favicon-16x16.png`,
+  `${BASE_PATH}/favicon.ico`
 ];
 
-// Install event - cache resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,7 +23,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Fetch event - serve cached content when offline
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
@@ -30,29 +31,9 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
-
-        return fetch(event.request).then(
-          (response) => {
-            // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
+        return fetch(event.request);
+      }
+    )
   );
 });
 
