@@ -20,7 +20,7 @@
     <meta name="background-color" content="#ffffff">
     <meta name="display" content="standalone">
     <meta name="orientation" content="portrait">
-    <meta name="start_url" content="/">
+    <meta name="start_url" content="/projeto-soropel/">
     
     <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,18 +33,19 @@
     
     <!-- Microsoft PWA Meta Tags -->
     <meta name="msapplication-TileColor" content="#1f2937">
-    <meta name="msapplication-config" content="/browserconfig.xml">
+    <meta name="msapplication-config" content="/projeto-soropel/browserconfig.xml">
     <script type="module" crossorigin src="/projeto-soropel/assets/index-CS_nXsmD.js"></script>
     <link rel="stylesheet" crossorigin href="/projeto-soropel/assets/index-DzLyfUW-.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
+
     
     <!-- Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/projeto-soropel/sw.js')
             .then((registration) => {
               console.log('SW registered: ', registration);
             })
