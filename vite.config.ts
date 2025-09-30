@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const base = env.VITE_BASE || (mode === 'production' ? '/projeto-soropel/' : '/')
+  const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV
+  const base = env.VITE_BASE || (mode === 'production' ? (isVercel ? '/' : '/projeto-soropel/') : '/')
 
   return {
     plugins: [react()],
