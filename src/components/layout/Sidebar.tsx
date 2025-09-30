@@ -68,8 +68,8 @@ export const Sidebar: React.FC<{
             sidebarCollapsed ? 'w-10 h-10 p-1' : 'w-12 h-12 p-2'
           )}>
             <img 
-              src="/logo_soropel.png" 
-              alt="Logo Soropel" 
+              src="/projeto-soropel/logo_soropel.png" 
+              alt="Soropel" 
               className="w-full h-full object-contain"
             />
           </div>

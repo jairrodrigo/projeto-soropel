@@ -10,7 +10,7 @@ export interface WeeklyPlanningComplete {
     machine_number: number
     name: string
     type: string
-    status: 'ativa' | 'manutencao' | 'inativa'
+    status: 'ativa' | 'manutencao' | 'parada'
   }
   planned_orders: PlannedOrderItem[]
   total_planned_quantity: number
@@ -37,7 +37,7 @@ export interface PlannedOrderItem {
   delivery_date: string
   estimated_duration_hours: number
   sequence_order: number
-  status: 'planned' | 'in_progress' | 'completed' | 'delayed'
+  status: 'planned' | 'in_production' | 'completed' | 'delayed'
   progress_percentage: number
 }
 

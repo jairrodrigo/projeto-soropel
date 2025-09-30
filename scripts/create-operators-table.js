@@ -3,7 +3,7 @@
 
 // Configurações do Supabase (hardcoded para este script)
 const supabaseUrl = 'https://chhtllsprlqvjeivspxq.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRicnV5bHZrcXhieXJzbmZyZHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NDQyODQsImV4cCI6MjA2NzAyMDI4NH0.B-N8j8L6wbWHe5e6y3NHDy989F0Et9mAjESSv6REEQY'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaHRsbHNwcmxxdmplaXZzcHhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTQ0OTcsImV4cCI6MjA3NDQzMDQ5N30.qvoJ7Y53yihGkzzMxHcY8hBqiLb68kZxvR1mBpwWnAY'
 
 const createOperatorsTableSQL = `
 -- =============================================
@@ -81,7 +81,7 @@ async function createOperatorsTable() {
       console.log('\n' + '='.repeat(60))
       console.log(createOperatorsTableSQL)
       console.log('='.repeat(60) + '\n')
-      console.log('🌐 Acesse: https://supabase.com/dashboard/project/dbruylvkqxbyrsnfrdpu/sql/new')
+      console.log('🌐 Acesse: https://supabase.com/dashboard/project/chhtllsprlqvjeivspxq/sql/new')
       console.log('📝 Cole o SQL acima e execute')
       return false
     }

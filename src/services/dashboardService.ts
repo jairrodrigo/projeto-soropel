@@ -16,7 +16,7 @@ const convertSupabaseMachineToFrontend = (supabaseMachine: any): Machine => {
     case 'manutencao':
       frontendStatus = 'maintenance'
       break
-    case 'inativa':
+    case 'parada':
       frontendStatus = 'offline'
       break
     default:
@@ -66,14 +66,14 @@ export const getDashboardMetrics = async (): Promise<DatabaseResult<DashboardMet
       supabase!
         .from('orders')
         .select('id, status')
-        .in('status', ['pendente', 'producao']),
-        
+        .in('status', ['aguardando_producao', 'em_producao']),
+      
       // Bobinas em uso
       supabase!
         .from('bobinas')
         .select('id, status')
         .eq('status', 'em_maquina'),
-        
+      
       // Máquinas ativas
       supabase!
         .from('machines')

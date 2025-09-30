@@ -60,7 +60,7 @@ export const getAvailableOrders = async (): Promise<DatabaseResult<OrderForPlann
           fantasy_name
         )
       `)
-      .in('status', ['pending', 'in_production'])
+      .in('status', ['aguardando_producao', 'em_producao'])
       .order('delivery_date', { ascending: true })
 
     if (error) {
@@ -133,7 +133,7 @@ export const getAvailableOrders = async (): Promise<DatabaseResult<OrderForPlann
       quantity: item.total_units || 0,
       priority: item.priority as 'urgente' | 'especial' | 'normal',
       deadline: item.delivery_date,
-      status: item.status
+      status: mapOrderStatus(item.status)
     }))
 
     console.log('✅ Pedidos carregados:', orders.length)
@@ -337,4 +337,14 @@ export const weeklyPlanningService = {
   getAvailableOrders,
   createOrUpdatePlanning,
   deletePlanning
+}
+
+// Mapeia status do banco para status do frontend
+const mapOrderStatus = (status: string): 'pending' | 'in_production' | 'completed' => {
+  const map: Record<string, 'pending' | 'in_production' | 'completed'> = {
+    'aguardando_producao': 'pending',
+    'em_producao': 'in_production',
+    'produzido': 'completed'
+  }
+  return map[status] || 'pending'
 }

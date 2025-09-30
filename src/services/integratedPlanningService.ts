@@ -75,7 +75,7 @@ class IntegratedPlanningService {
             product:products(name, soropel_code)
           )
         `)
-        .in('status', ['pending', 'planned', 'in_production'])
+        .in('status', ['aguardando_producao', 'em_producao'])
         .order('delivery_date', { ascending: true })
 
       if (ordersError) {
@@ -134,7 +134,7 @@ class IntegratedPlanningService {
         quantity: item.quantity,
         priority: order.priority,
         delivery_date: order.delivery_date,
-        status: order.status,
+        status: this.mapOrderStatus(order.status),
         estimated_hours: this.calculateEstimatedHours(item.quantity, item.product?.name),
         machine_compatibility: this.getMachineCompatibility(item.product?.name),
         is_planned: Boolean(item.planned_machine_id),
@@ -323,11 +323,19 @@ class IntegratedPlanningService {
     const statusMap: Record<string, 'active' | 'stopped' | 'maintenance' | 'waiting'> = {
       'ativa': 'active',
       'manutencao': 'maintenance',
-      'inativa': 'stopped'
+      'parada': 'stopped'
     }
     return statusMap[status] || 'stopped'
   }
 
+  private mapOrderStatus(status: string): 'pending' | 'planned' | 'in_production' | 'completed' {
+    const map: Record<string, 'pending' | 'planned' | 'in_production' | 'completed'> = {
+      'aguardando_producao': 'pending',
+      'em_producao': 'in_production',
+      'produzido': 'completed'
+    }
+    return map[status] || 'pending'
+  }
   private mapToPlannedOrderItem(order: OrderForPlanning): PlannedOrderItem {
     return {
       order_id: order.id,

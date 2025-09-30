@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { MainLayout } from '@/components/layout'
-import { DashboardPage, NovaBobinaPage, NovoPedidoPage, PedidosPage } from '@/pages'
-import { GestaoMaquinasPage } from '@/pages/GestaoMaquinasPage'
+import { DashboardPage, NovaBobinaPage, NovoPedidoPage, PedidosPage, GestaoMaquinasPage } from '@/pages'
 
 type PageType = 'dashboard' | 'nova-bobina' | 'novo-pedido' | 'pedidos' | 'maquinas'
 

@@ -1,1 +1,1 @@
-export { default as NovaBobinaPage } from './NovaBobinaPage'
+export { default } from './NovaBobinaPage'

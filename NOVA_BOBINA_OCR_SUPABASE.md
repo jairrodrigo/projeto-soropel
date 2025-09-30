@@ -59,7 +59,7 @@
 ### **🔑 Variáveis de Ambiente (.env.development):**
 ```bash
 # 🗄️ Supabase (JÁ CONFIGURADO)
-VITE_SUPABASE_URL=https://dbruylvkqxbyrsnfrdpu.supabase.co
+VITE_SUPABASE_URL=https://chhtllsprlqvjeivspxq.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...REEQY
 
 # 🤖 OpenAI (OPCIONAL - usa simulação se não configurado)

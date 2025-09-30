@@ -9,7 +9,7 @@ export interface Order {
   id: string
   order_number: string
   client_id?: string | null
-  status: 'pendente' | 'producao' | 'finalizado' | 'entregue'
+  status: 'aguardando_producao' | 'em_producao' | 'produzido' | 'produzido_parcial' | 'separado_parcial' | 'cancelado' | 'em_andamento' | 'liberado_completo' | 'liberado_parcial' | 'entrega_completa' | 'entrega_parcial'
   priority: 'normal' | 'especial' | 'urgente'
   delivery_date?: string
   observations?: string
@@ -228,8 +228,8 @@ export const createOrder = async (orderData: NewOrderData): Promise<DatabaseResu
         client_id: clientId, // Usar cliente criado/encontrado ou null
         priority: convertFrontendPriorityToDatabase(orderData.priority || 'normal'),
         delivery_date: orderData.delivery_date,
-        observations: orderData.observations || orderData.notes,
-        status: 'pendente' // Status válido conforme constraint
+        notes: orderData.observations || orderData.notes,
+        status: 'aguardando_producao' // status válido conforme constraint do schema
       })
       .select()
       .single()
@@ -716,12 +716,17 @@ export const updateOrder = async (
       throw createSupabaseUnavailableError()
     }
 
+    const payload: Record<string, any> = {
+      updated_at: new Date().toISOString()
+    }
+    if (updateData.priority) payload.priority = updateData.priority
+    if (updateData.delivery_date) payload.delivery_date = updateData.delivery_date
+    if (updateData.status) payload.status = updateData.status
+    if (updateData.observations !== undefined) payload.notes = updateData.observations
+
     const { data, error } = await supabase!
       .from('orders')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(payload)
       .eq('id', orderId)
       .select()
       .single()

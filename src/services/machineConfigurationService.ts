@@ -126,7 +126,7 @@ class MachineConfigurationService {
                 customer_id
               `)
               .eq('id', item.order_id)
-              .in('status', ['pending', 'in_production'])
+              .in('status', ['aguardando_producao', 'em_producao'])
               .single()
 
             if (order) {
@@ -154,7 +154,7 @@ class MachineConfigurationService {
                 quantity: item.quantity,
                 priority: order.priority as 'urgente' | 'especial' | 'normal',
                 delivery_date: order.delivery_date,
-                status: order.status as 'pending' | 'in_production' | 'completed',
+                status: this.mapOrderStatus(order.status),
                 days_until_delivery: daysUntil
               })
             }
@@ -213,7 +213,7 @@ class MachineConfigurationService {
           .from('bobinas')
           .select('reel_number, paper_type')
           .eq('machine_id', machine.id)
-          .eq('status', 'active')
+          .eq('status', 'em_maquina')
           .single()
         
         currentBobina = bobina
@@ -278,7 +278,7 @@ class MachineConfigurationService {
                   quantity: item.quantity,
                   priority: order.priority as 'urgente' | 'especial' | 'normal',
                   delivery_date: order.delivery_date,
-                  status: order.status as 'pending' | 'in_production' | 'completed',
+                  status: this.mapOrderStatus(order.status),
                   days_until_delivery: daysUntil
                 })
               }
@@ -481,10 +481,10 @@ class MachineConfigurationService {
     const statusMap: Record<string, 'active' | 'maintenance' | 'stopped' | 'waiting'> = {
       'ativa': 'active',
       'manutencao': 'maintenance',
-      'inativa': 'stopped',
+      'parada': 'stopped',
       'aguardando': 'waiting'
     }
-    return statusMap[status] || 'stopped'
+    return statusMap[status] || 'parada'
   }
 
   // Mapear status da interface para banco
@@ -492,10 +492,19 @@ class MachineConfigurationService {
     const statusMap: Record<string, string> = {
       'active': 'ativa',
       'maintenance': 'manutencao',
-      'stopped': 'inativa',
-      'waiting': 'aguardando'
+      'stopped': 'parada',
+      'waiting': 'parada'
     }
-    return statusMap[status] || 'inativa'
+    return statusMap[status] || 'parada'
+  }
+
+  private mapOrderStatus(status: string): 'pending' | 'in_production' | 'completed' {
+    const map: Record<string, 'pending' | 'in_production' | 'completed'> = {
+      'aguardando_producao': 'pending',
+      'em_producao': 'in_production',
+      'produzido': 'completed'
+    }
+    return map[status] || 'pending'
   }
 
   // Calcular métricas da configuração

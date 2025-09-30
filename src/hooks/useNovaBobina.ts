@@ -129,23 +129,58 @@ export const useNovaBobina = () => {
   const activateCamera = useCallback(async () => {
     try {
       setCameraState(prev => ({ ...prev, isActive: true }))
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      })
-      
+
+      // Verifica dispositivos de vídeo disponíveis
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(d => d.kind === 'videoinput')
+
+      if (videoDevices.length === 0) {
+        throw new Error('NoCameraDevices')
+      }
+
+      // Preferir câmera traseira se detectada, senão usar a primeira disponível
+      const rearCamera = videoDevices.find(d => /back|rear|environment/i.test(d.label))
+      const targetDeviceId = (rearCamera ?? videoDevices[0]).deviceId
+
+      // Tenta com deviceId explícito (mais confiável em desktop)
+      const constraints: MediaStreamConstraints = {
+        video: { deviceId: { exact: targetDeviceId } }
+      }
+
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints)
+      } catch (err) {
+        try {
+          // Fallback para constraints genéricos com facingMode
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+        } catch (err2) {
+          // Fallback final: vídeo simples sem constraints
+          stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        }
+      }
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
       }
-      
-    } catch (error) {
+
+      // Marca câmera pronta
+      setCameraState(prev => ({ ...prev, isReady: true }))
+
+    } catch (error: any) {
       console.error('Erro ao ativar câmera:', error)
-      setCameraState(prev => ({ ...prev, isActive: false }))
-      showNotification({
-        message: '❌ Erro ao ativar câmera. Verifique as permissões.',
-        type: 'error'
-      })
+      setCameraState(prev => ({ ...prev, isActive: false, isReady: false }))
+
+      // Mensagens específicas conforme o erro
+      let message = '❌ Erro ao ativar câmera. Verifique as permissões.'
+      if (error?.name === 'NotAllowedError') {
+        message = '❌ Permissão negada para acessar a câmera. Conceda acesso e tente novamente.'
+      } else if (error?.name === 'NotFoundError' || error?.message === 'NoCameraDevices') {
+        message = '❌ Nenhum dispositivo de câmera foi encontrado. Conecte uma câmera ou verifique as configurações do sistema.'
+      }
+
+      showNotification({ message, type: 'error' })
     }
   }, [showNotification])
 

@@ -14,7 +14,7 @@
 **Problema**: Chaves do Supabase e OpenAI podem estar expostas no frontend
 ```javascript
 // ❌ RISCO: Chaves visíveis no código cliente
-const supabaseUrl = 'https://dbruylvkqxbyrsnfrdpu.supabase.co'
+const supabaseUrl = 'https://chhtllsprlqvjeivspxq.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
 ```
 
@@ -26,7 +26,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
 **Solução**:
 ```bash
 # Configurar variáveis de ambiente
-VITE_SUPABASE_URL=https://dbruylvkqxbyrsnfrdpu.supabase.co
+VITE_SUPABASE_URL=https://chhtllsprlqvjeivspxq.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 VITE_OPENAI_API_KEY=sk-...
 ```
@@ -199,7 +199,7 @@ Aplicação não implementa Content Security Policy, permitindo:
         content="default-src 'self'; 
                  script-src 'self' 'unsafe-inline' https://api.openai.com;
                  img-src 'self' data: https:;
-                 connect-src 'self' https://dbruylvkqxbyrsnfrdpu.supabase.co https://api.openai.com;">
+                 connect-src 'self' https://chhtllsprlqvjeivspxq.supabase.co https://api.openai.com;">
   ```
 - [ ] **Configurar headers** no Vercel
 - [ ] **Monitorar violações** CSP

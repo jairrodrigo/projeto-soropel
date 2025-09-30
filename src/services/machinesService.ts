@@ -15,7 +15,7 @@ interface SupabaseMachine {
   name: string
   type: string
   is_special: boolean
-  status: 'ativa' | 'manutencao' | 'inativa'
+  status: 'ativa' | 'manutencao' | 'parada'
   max_width: number | null
   max_height: number | null
   efficiency_rate: number
@@ -62,7 +62,7 @@ const convertSupabaseMachineToFrontend = (
   const statusMap: Record<string, MachineStatusType> = {
     'ativa': 'active',
     'manutencao': 'maintenance', 
-    'inativa': 'stopped'
+    'parada': 'stopped'
   }
 
   // Mapear tipo da máquina
@@ -182,7 +182,7 @@ export class MachinesService {
       // Combinar dados com informações reais
       const result = machines.map(machine => {
         const status = machineStatuses?.find(s => s.machine_id === machine.id)
-        const currentOrder = machine.current_order?.find(o => o.status === 'producao')
+        const currentOrder = machine.current_order?.find(o => o.status === 'em_producao')
         const bobina = machine.bobinas?.[0]
         
         return convertSupabaseMachineToFrontend(machine, status, currentOrder, bobina)
@@ -216,8 +216,8 @@ export class MachinesService {
       const statusMap: Record<MachineStatusType, string> = {
         'active': 'ativa',
         'maintenance': 'manutencao',
-        'stopped': 'inativa',
-        'waiting': 'inativa'
+        'stopped': 'parada',
+        'waiting': 'parada'
       }
 
       // Buscar UUID da máquina pelo número

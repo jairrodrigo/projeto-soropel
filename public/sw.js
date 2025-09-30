@@ -24,6 +24,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  // Apenas intercepta requisições GET com esquemas http(s). Ignora "chrome-extension" e outros.
+  if (event.request.method !== 'GET' || (url.protocol !== 'http:' && url.protocol !== 'https:')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

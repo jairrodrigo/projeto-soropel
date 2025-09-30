@@ -9,7 +9,7 @@
 ## 🌐 URLs do Projeto
 - **🔵 Local**: http://localhost:3000 (Vite dev server ativo)
 - **📂 GitHub**: https://github.com/jairrodrigo/sistema-soropel
-- **🗄️ Supabase**: dbruylvkqxbyrsnfrdpu.supabase.co (projeto: produção soropel)
+- **🗄️ Supabase**: chhtllsprlqvjeivspxq.supabase.co (projeto: produção soropel)
 
 ## 🏗️ Estrutura de Pastas
 ```
@@ -172,7 +172,7 @@ src/
 ### **Environment Variables (.env.development):**
 ```bash
 # Supabase
-VITE_SUPABASE_URL=https://dbruylvkqxbyrsnfrdpu.supabase.co
+VITE_SUPABASE_URL=https://chhtllsprlqvjeivspxq.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # OpenAI
@@ -304,7 +304,7 @@ npx vercel --prod    # Deploy manual Vercel
 ## 🔗 Links Importantes
 
 - **📂 Repositório**: https://github.com/jairrodrigo/sistema-soropel
-- **🗄️ Supabase Dashboard**: https://supabase.com/dashboard/project/dbruylvkqxbyrsnfrdpu
+- **🗄️ Supabase Dashboard**: https://supabase.com/dashboard/project/chhtllsprlqvjeivspxq
 - **📋 Planilha Original**: C:\Users\jairr\Desktop\jair.cloud\2025_CONTROLE_PRODUCAO.xlsx
 
 ## 🎉 Resumo Executivo

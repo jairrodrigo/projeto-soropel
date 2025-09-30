@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient('https://chhtllsprlqvjeivspxq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRicnV5bHZrcXhieXJzbmZyZHB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NDQyODQsImV4cCI6MjA2NzAyMDI4NH0.B-N8j8L6wbWHe5e6y3NHDy989F0Et9mAjESSv6REEQY');
+const supabase = createClient('https://chhtllsprlqvjeivspxq.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoaHRsbHNwcmxxdmplaXZzcHhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NTQ0OTcsImV4cCI6MjA3NDQzMDQ5N30.qvoJ7Y53yihGkzzMxHcY8hBqiLb68kZxvR1mBpwWnAY');
 
 async function testFinal() {
   console.log('🚀 TESTE: Novo Pedido → Página Pedidos');
@@ -16,11 +16,9 @@ async function testFinal() {
   const pedido = {
     order_number: 'OP-' + Math.floor(Math.random() * 9999),
     priority: 'normal',
-    tipo: 'neutro',
     delivery_date: '2025-08-15',
-    observations: 'Teste',
-    status: 'pendente',
-    total_units: 3000
+    notes: 'Teste de integração',
+    status: 'aguardando_producao'
   };
   
   console.log('📝 Criando:', pedido.order_number);
@@ -63,7 +61,7 @@ async function testFinal() {
   // Verificar resultado
   const { data: todos } = await supabase
     .from('orders')
-    .select('order_number, status, total_units')
+    .select('order_number, status, delivery_date, notes')
     .order('created_at', { ascending: false })
     .limit(3);
     

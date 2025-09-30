@@ -344,12 +344,12 @@ export class IoTService {
       }
 
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/iot-contador-sacos`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/iot-contador-sacos`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify(testData)
         }

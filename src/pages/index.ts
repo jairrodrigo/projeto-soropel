@@ -1,5 +1,5 @@
 export { DashboardPage } from './Dashboard'
-export { NovaBobinaPage } from './nova-bobina/NovaBobinaPage'
+export { default as NovaBobinaPage } from './nova-bobina'
 export { NovoPedidoPage } from './NovoPedido'
 export { PedidosPage } from './Pedidos'
 export { GestaoMaquinasPage } from './GestaoMaquinasPage'
