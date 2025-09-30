@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soropel-v1';
+const CACHE_NAME = 'soropel-v2';
 const BASE_PATH = '/projeto-soropel';
 
 const urlsToCache = [
@@ -14,6 +14,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -30,16 +31,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first para navegações (documentos HTML)
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(`${BASE_PATH}/index.html`))
+    );
+    return;
+  }
+
+  // Cache-first para demais assets (CSS/JS/img)
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
+      .then((response) => response || fetch(event.request))
   );
 });
 
@@ -56,7 +65,7 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
