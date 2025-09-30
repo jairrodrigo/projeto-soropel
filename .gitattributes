@@ -1,0 +1,27 @@
+# Normalizar finais de linha para LF e evitar avisos de CRLF
+* text=auto eol=lf
+
+# Tipos de texto comuns
+*.js   text
+*.ts   text
+*.tsx  text
+*.jsx  text
+*.json text
+*.css  text
+*.scss text
+*.html text
+*.md   text
+*.yml  text
+*.yaml text
+*.xml  text
+*.svg  text
+*.sql  text
+*.cjs  text
+*.mjs  text
+
+# Arquivos binários (não aplicar conversão de EOL)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
