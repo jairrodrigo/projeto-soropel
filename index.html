@@ -20,7 +20,7 @@
     <meta name="background-color" content="#ffffff">
     <meta name="display" content="standalone">
     <meta name="orientation" content="portrait">
-    <meta name="start_url" content="/projeto-soropel/">
+    <meta name="start_url" content="./">
     
     <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,18 +35,18 @@
     <meta name="msapplication-TileColor" content="#1f2937">
     <meta name="msapplication-config" content="browserconfig.xml">
 
-    <!-- Entry point para Vite (dev/prod) -->
+    <!-- Entrada da aplicação Vite -->
     <script type="module" src="/src/main.tsx"></script>
   </head>
   <body>
     <div id="root"></div>
 
-    <!-- Service Worker Registration com base dinâmica -->
+    <!-- Service Worker Registration -->
     <script type="module">
       if ('serviceWorker' in navigator) {
+        const BASE_URL = import.meta.env.BASE_URL || '/';
         window.addEventListener('load', () => {
-          const base = import.meta.env.BASE_URL || '/'
-          navigator.serviceWorker.register(base + 'sw.js')
+          navigator.serviceWorker.register(`${BASE_URL}sw.js`)
             .then((registration) => {
               console.log('SW registered: ', registration);
             })
