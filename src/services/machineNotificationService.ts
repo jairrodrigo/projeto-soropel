@@ -41,11 +41,10 @@ export const notifyMachineAssignment = async (
 
     // 2. Atualizar bobina com machine_id
     const { error: bobinaError } = await supabase
-      .from('bobinas')
+      .from('rolls')
       .update({
         machine_id: machine.id,
         status: 'em_maquina',
-        product_in_production: bobinaData.produto || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', bobinaData.id)
@@ -59,7 +58,8 @@ export const notifyMachineAssignment = async (
       .from('machines')
       .update({
         current_bobina_id: bobinaData.id,
-        current_product: bobinaData.produto || null,
+        // Remover current_product pois não existe no schema
+      // current_product: bobinaData.produto || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', machine.id)
@@ -102,10 +102,10 @@ export const notifyMachineRemoval = async (
 
     // 1. Buscar bobina com máquina atual
     const { data: bobina, error: bobinaError } = await supabase
-      .from('bobinas')
+      .from('rolls')
       .select(`
         id,
-        reel_number,
+        roll_code,
         machine_id,
         machines:machines(machine_number)
       `)
@@ -121,7 +121,8 @@ export const notifyMachineRemoval = async (
       .from('machines')
       .update({
         current_bobina_id: null,
-        current_product: null,
+        // Remover current_product pois não existe no schema
+      // current_product: null,
         updated_at: new Date().toISOString()
       })
       .eq('id', bobina.machine_id)
@@ -132,11 +133,10 @@ export const notifyMachineRemoval = async (
 
     // 3. Atualizar bobina
     const { error: updateError } = await supabase
-      .from('bobinas')
+      .from('rolls')
       .update({
         machine_id: null,
         status: 'estoque',
-        product_in_production: null,
         updated_at: new Date().toISOString()
       })
       .eq('id', bobinaId)
@@ -153,12 +153,12 @@ export const notifyMachineRemoval = async (
         .insert({
           type: 'changed',
           title: `Máquina ${machineNumber} - Bobina Removida`,
-          description: `Bobina ${bobina.reel_number} removida da máquina`,
+          description: `Bobina ${bobina.roll_code} removida da máquina`,
           machine_id: bobina.machine_id,
           bobina_id: bobinaId,
           user_name: 'Sistema Nova Bobina',
           metadata: {
-            bobina_codigo: bobina.reel_number,
+            bobina_codigo: bobina.roll_code,
             acao: 'remocao'
           }
         })
@@ -192,7 +192,7 @@ export const getMachineNotifications = async (
       .from('activities')
       .select(`
         *,
-        bobinas:bobina_id(reel_number)
+        bobinas:bobina_id(roll_code)
       `)
       .eq('machine_id', machine.id)
       .eq('type', 'changed')
@@ -207,7 +207,7 @@ export const getMachineNotifications = async (
     return activities.map(activity => ({
       machineId: machine.id,
       bobinaId: activity.bobina_id || '',
-      bobinaNumero: activity.bobinas?.reel_number || 'N/A',
+      bobinaNumero: activity.bobinas?.roll_code || 'N/A',
       produto: activity.metadata?.produto,
       timestamp: activity.created_at
     }))

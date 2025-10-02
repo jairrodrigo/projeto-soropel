@@ -2,6 +2,7 @@
 // CRUD completo para gestão de bobinas no sistema Soropel
 
 import { supabase } from '../lib/supabase'
+import { logDebug, logInfo, logError } from '../utils/logger'
 import type { DatabaseResult } from '../types/supabase'
 
 // 🎯 TIPOS ESPECÍFICOS PARA BOBINAS
@@ -70,12 +71,14 @@ export const getBobinas = async (
   pageSize = 50
 ): Promise<DatabaseResult<{ data: BobinaWithDetails[], count: number }>> => {
   try {
-    let query = supabase
-      .from('bobinas')
+    if (!checkSupabaseAvailable()) {
+      return { success: false, error: 'Supabase não disponível' }
+    }
+
+    let query = supabase!
+      .from('rolls')
       .select(`
-        *,
-        suppliers!inner(name),
-        paper_types!inner(name)
+        *
       `, { count: 'exact' })
 
     // 🎯 Aplicar filtros
@@ -135,8 +138,8 @@ export const getBobinas = async (
       data_saida: item.data_saida,
       created_at: item.created_at,
       updated_at: item.updated_at,
-      supplier_name: item.suppliers?.name || 'N/A',
-      paper_type_name: item.paper_types?.name || 'N/A'
+      supplier_name: Array.isArray(item.suppliers) ? item.suppliers[0]?.name || 'N/A' : item.suppliers?.name || 'N/A',
+      paper_type_name: Array.isArray(item.paper_types) ? item.paper_types[0]?.name || 'N/A' : item.paper_types?.name || 'N/A'
     }))
 
     return { 
@@ -154,15 +157,19 @@ export const getBobinas = async (
 // ➕ CRIAR OU ATUALIZAR BOBINA (UPSERT) - SOLUÇÃO PARA PROBLEMA DE DUPLICAÇÃO
 export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseResult<Bobina>> => {
   try {
+    if (!checkSupabaseAvailable()) {
+      return { success: false, error: 'Supabase não disponível' }
+    }
+
     // ✅ Log removido para console limpo
     // ✅ Log removido para console limpo
     
     // 🔍 VERIFICAR SE BOBINA JÁ EXISTE
     // ✅ Log removido para console limpo
-    const { data: existingBobina, error: searchError } = await supabase
-      .from('bobinas')
-      .select('id, reel_number, status')
-      .eq('reel_number', bobinaData.codigo)
+    const { data: existingBobina, error: searchError } = await supabase!
+      .from('rolls')
+      .select('id, roll_code, status')
+      .eq('roll_code', bobinaData.codigo)
       .single()
 
     if (searchError && searchError.code !== 'PGRST116') {
@@ -185,8 +192,8 @@ export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
         updateData.observacoes = `Atualizado para sobra em ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`
       }
 
-      const { data: updatedBobina, error: updateError } = await supabase
-        .from('bobinas')
+      const { data: updatedBobina, error: updateError } = await supabase!
+        .from('rolls')
         .update(updateData)
         .eq('id', existingBobina.id)
         .select()
@@ -202,7 +209,7 @@ export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
     }
 
     // ➕ SE NÃO EXISTE, CRIAR NOVA
-    console.log('➕ Bobina não existe, criando nova...')
+    logDebug('BobinasService', 'Bobina não existe, criando nova...')
     return await createBobina(bobinaData)
   } catch (error) {
     console.error('❌ Erro inesperado no upsert bobina:', error)
@@ -217,182 +224,42 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
     // ✅ Log removido para console limpo
     // ✅ Log removido para console limpo
 
-    // 🔍 Buscar ou criar fornecedor
-    let supplier_id: string
-    
-    // ✅ Log removido para console limpo
-    const { data: existingSupplier, error: searchSupplierError } = await supabase
-      .from('suppliers')
-      .select('id')
-      .eq('name', bobinaData.supplier_name)
-      .single()
+    // Nota: Sistema atual não usa tabela de fornecedores separada
+    // O nome do fornecedor é armazenado diretamente na bobina
 
-    if (searchSupplierError && searchSupplierError.code !== 'PGRST116') {
-      console.error('❌ Erro ao buscar fornecedor:', searchSupplierError)
-      return { error: `Erro ao buscar fornecedor: ${searchSupplierError.message}` }
-    }
-
-    if (existingSupplier) {
-      supplier_id = existingSupplier.id
-      // ✅ Log removido para console limpo
-    } else {
-      // Criar novo fornecedor (usando campos corretos)
-      console.log('➕ Criando novo fornecedor:', bobinaData.supplier_name)
-      const { data: newSupplier, error: supplierError } = await supabase
-        .from('suppliers')
-        .insert([{
-          name: bobinaData.supplier_name,
-          contact_person: `Fornecedor criado automaticamente via IA em ${new Date().toLocaleDateString('pt-BR')}`,
-          active: true,
-          created_at: new Date().toISOString()
-        }])
-        .select('id')
-        .single()
-
-      if (supplierError) {
-        console.error('❌ Erro detalhado ao criar fornecedor:', {
-          error: supplierError,
-          message: supplierError.message,
-          code: supplierError.code,
-          details: supplierError.details,
-          hint: supplierError.hint
-        })
-        
-        // Se erro por duplicata, tentar buscar o fornecedor existente
-        if (supplierError.code === '23505') {
-          // ✅ Log removido para console limpo
-          const { data: duplicateSupplier } = await supabase
-            .from('suppliers')
-            .select('id')
-            .ilike('name', bobinaData.supplier_name)
-            .single()
-          
-          if (duplicateSupplier) {
-            // ✅ Log removido para console limpo
-            supplier_id = duplicateSupplier.id
-          } else {
-            return { error: `Erro ao processar fornecedor: ${supplierError.message}` }
-          }
-        } else {
-          return { error: `Erro ao processar fornecedor: ${supplierError.message}` }
-        }
-      } else if (!newSupplier) {
-        console.error('❌ Fornecedor criado mas sem dados retornados')
-        return { error: 'Erro ao processar fornecedor - dados não retornados' }
-      } else {
-        supplier_id = newSupplier.id
-        // ✅ Log removido para console limpo
-      }
-    }
-
-    // 🔍 Buscar ou criar tipo de papel
-    let paper_type_id: string
-    
-    // ✅ Log removido para console limpo
-    // ✅ Log removido para console limpo
-    // Buscar tanto por nome quanto por código (caso OCR retorne código em vez de nome)
-    const { data: existingPaperTypes, error: searchPaperTypeError } = await supabase
-      .from('paper_types')
-      .select('id')
-      .or(`name.eq.${bobinaData.paper_type_name},code.eq.${bobinaData.paper_type_name}`)
-      
-    const existingPaperType = existingPaperTypes?.[0] || null
-    // ✅ Log removido para console limpo
-
-    if (searchPaperTypeError && searchPaperTypeError.code !== 'PGRST116') {
-      console.error('❌ Erro ao buscar tipo de papel:', searchPaperTypeError)
-      return { error: `Erro ao buscar tipo de papel: ${searchPaperTypeError.message}` }
-    }
-
-    if (existingPaperType) {
-      paper_type_id = existingPaperType.id
-      // ✅ Log removido para console limpo
-    } else {
-      // Criar novo tipo de papel (usando campos corretos)
-      console.log('➕ Criando novo tipo de papel:', bobinaData.paper_type_name)
-      
-      // Gerar código automático baseado no nome (ex: MIX038 -> MIX038, Papel Novo -> PAPELNOVO)
-      const paperCode = bobinaData.paper_type_name
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '')
-        .substring(0, 10)
-      
-      const { data: newPaperType, error: paperTypeError } = await supabase
-        .from('paper_types')
-        .insert([{
-          code: paperCode,
-          name: bobinaData.paper_type_name,
-          description: `Tipo de papel criado automaticamente via IA em ${new Date().toLocaleDateString('pt-BR')}`,
-          active: true,
-          created_at: new Date().toISOString()
-        }])
-        .select('id')
-        .single()
-
-      if (paperTypeError) {
-        console.error('❌ Erro detalhado ao criar tipo de papel:', {
-          error: paperTypeError,
-          message: paperTypeError.message,
-          code: paperTypeError.code,
-          details: paperTypeError.details,
-          hint: paperTypeError.hint
-        })
-        
-        // Se erro por duplicata, tentar buscar o tipo existente
-        if (paperTypeError.code === '23505') {
-          // ✅ Log removido para console limpo
-          const { data: duplicatePaperTypes } = await supabase
-            .from('paper_types')
-            .select('id')
-            .or(`name.ilike.%${bobinaData.paper_type_name}%,code.ilike.%${bobinaData.paper_type_name}%`)
-          
-          const duplicatePaperType = duplicatePaperTypes?.[0] || null
-          
-          if (duplicatePaperType) {
-            // ✅ Log removido para console limpo
-            paper_type_id = duplicatePaperType.id
-          } else {
-            return { error: `Erro ao processar tipo de papel: ${paperTypeError.message}` }
-          }
-        } else {
-          return { error: `Erro ao processar tipo de papel: ${paperTypeError.message}` }
-        }
-      } else if (!newPaperType) {
-        console.error('❌ Tipo de papel criado mas sem dados retornados')
-        return { error: 'Erro ao processar tipo de papel - dados não retornados' }
-      } else {
-        paper_type_id = newPaperType.id
-        // ✅ Log removido para console limpo
-      }
-    }
+    // Nota: Sistema atual não usa tabela de tipos de papel separada
+    // O tipo de papel é armazenado diretamente na bobina
 
     // 💾 Criar bobina
-    const { data, error } = await supabase
-      .from('bobinas')
+    logDebug('BobinasService', 'Criando bobina no banco', { 
+      roll_code: bobinaData.codigo,
+      supplier: bobinaData.supplier_name,
+      paper_type: bobinaData.paper_type_name
+    })
+    
+    const { data: newBobina, error: bobinaError } = await supabase
+      .from('rolls')
       .insert([{
-        reel_number: bobinaData.codigo,  // Campo correto da tabela
+        roll_code: bobinaData.codigo,
         supplier: bobinaData.supplier_name,
         paper_type: bobinaData.paper_type_name,
-        gramatura: bobinaData.gramatura,
-        initial_weight: bobinaData.peso_inicial,
-        current_weight: bobinaData.peso_atual || bobinaData.peso_inicial,
-        weight_kg: bobinaData.peso_inicial,
         width: bobinaData.largura,
-        diameter: bobinaData.diametro,
-        condutor: bobinaData.condutor,  // Novo campo
-        status: bobinaData.status || 'estoque',
-        received_date: bobinaData.data_entrada || new Date().toISOString().split('T')[0]
+        weight: bobinaData.gramatura,
+        length: bobinaData.diametro,
+        status: 'estoque',
+        received_date: new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString()
       }])
-      .select()
+      .select('*')
       .single()
 
-    if (error) {
-      console.error('❌ Erro ao criar bobina:', error)
-      return { error: error.message }
+    if (bobinaError) {
+      console.error('❌ Erro ao criar bobina:', bobinaError)
+      return { error: bobinaError.message }
     }
 
     // ✅ Log removido para console limpo
-    return { data }
+    return { data: newBobina }
   } catch (error) {
     console.error('❌ Erro inesperado ao criar bobina:', error)
     return { error: 'Erro de conexão' }
@@ -405,6 +272,10 @@ export const updateBobina = async (
   updates: Partial<NewBobinaData>
 ): Promise<DatabaseResult<Bobina>> => {
   try {
+    if (!checkSupabaseAvailable()) {
+      return { success: false, error: 'Supabase não disponível' }
+    }
+
     // Preparar dados para atualização
     const updateData: any = {}
     
@@ -413,8 +284,8 @@ export const updateBobina = async (
     if (updates.observacoes !== undefined) updateData.observacoes = updates.observacoes
     if (updates.data_entrada !== undefined) updateData.data_entrada = updates.data_entrada
     
-    const { data, error } = await supabase
-      .from('bobinas')
+    const { data, error } = await supabase!
+      .from('rolls')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -435,8 +306,12 @@ export const updateBobina = async (
 // 🗑️ DELETAR BOBINA
 export const deleteBobina = async (id: string): Promise<DatabaseResult<void>> => {
   try {
-    const { error } = await supabase
-      .from('bobinas')
+    if (!checkSupabaseAvailable()) {
+      return { success: false, error: 'Supabase não disponível' }
+    }
+
+    const { error } = await supabase!
+      .from('rolls')
       .delete()
       .eq('id', id)
 
@@ -457,12 +332,10 @@ export const getBobinaStats = async (): Promise<DatabaseResult<BobinaStats>> => 
   try {
     // Buscar estatísticas básicas
     const { data: bobinas, error } = await supabase
-      .from('bobinas')
+      .from('rolls')
       .select(`
         status,
-        peso_atual,
-        suppliers!inner(name),
-        paper_types!inner(name)
+        weight
       `)
 
     if (error) {
@@ -477,34 +350,16 @@ export const getBobinaStats = async (): Promise<DatabaseResult<BobinaStats>> => 
       sobras: bobinas.filter(b => b.status === 'sobra').length,
       peso_total_estoque: bobinas
         .filter(b => b.status === 'estoque')
-        .reduce((sum, b) => sum + (b.peso_atual || 0), 0),
+        .reduce((sum, b) => sum + (b.weight || 0), 0),
       peso_medio_bobina: bobinas.length > 0 
-        ? bobinas.reduce((sum, b) => sum + (b.peso_atual || 0), 0) / bobinas.length
+        ? bobinas.reduce((sum, b) => sum + (b.weight || 0), 0) / bobinas.length
         : 0,
       fornecedor_mais_usado: 'N/A',
       tipo_papel_mais_usado: 'N/A'
     }
 
-    // Calcular fornecedor mais usado
-    const supplierCounts = bobinas.reduce((acc, b) => {
-      const supplier = b.suppliers?.name || 'N/A'
-      acc[supplier] = (acc[supplier] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    stats.fornecedor_mais_usado = Object.entries(supplierCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A'
-
-    // Calcular tipo mais usado
-    const paperTypeCounts = bobinas.reduce((acc, b) => {
-      const paperType = b.paper_types?.name || 'N/A'
-      acc[paperType] = (acc[paperType] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    stats.tipo_papel_mais_usado = Object.entries(paperTypeCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A'
-
+    // Como não temos mais as tabelas de fornecedores e tipos de papel,
+    // mantemos os valores padrão
     return { data: stats }
   } catch (error) {
     console.error('❌ Erro inesperado ao buscar estatísticas:', error)
@@ -515,21 +370,12 @@ export const getBobinaStats = async (): Promise<DatabaseResult<BobinaStats>> => 
 // 🔍 BUSCAR FORNECEDORES DISPONÍVEIS
 export const getAvailableSuppliers = async (): Promise<DatabaseResult<Array<{id: string, name: string}>>> => {
   try {
-    const { data, error } = await supabase
-      .from('suppliers')
-      .select('id, name')
-      .eq('ativo', true)
-      .order('name')
-
-    if (error) {
-      console.error('❌ Erro ao buscar fornecedores:', error)
-      return { error: error.message }
-    }
-
-    return { data: data || [] }
+    // Sistema atual não usa tabela de fornecedores separada
+    // Retorna lista vazia para compatibilidade
+    return { data: [] }
   } catch (error) {
-    console.error('❌ Erro inesperado ao buscar fornecedores:', error)
-    return { error: 'Erro de conexão' }
+    console.error('❌ Erro ao buscar fornecedores:', error)
+    return { error: 'Erro ao buscar fornecedores' }
   }
 }
 
@@ -557,8 +403,12 @@ export const getAvailablePaperTypes = async (): Promise<DatabaseResult<Array<{id
 // 🧪 TESTAR CONEXÃO BOBINAS
 export const testBobinaConnection = async (): Promise<boolean> => {
   try {
-    const { data } = await supabase
-      .from('bobinas')
+    if (!checkSupabaseAvailable()) {
+      return false
+    }
+
+    const { data } = await supabase!
+      .from('rolls')
       .select('count')
       .limit(1)
     
@@ -579,4 +429,13 @@ export default {
   getAvailableSuppliers,
   getAvailablePaperTypes,
   testBobinaConnection
+}
+
+// 🔍 Função auxiliar para verificar disponibilidade do Supabase
+const checkSupabaseAvailable = (): boolean => {
+  if (!supabase) {
+    console.warn('⚠️ Supabase não está disponível. Operação cancelada.')
+    return false
+  }
+  return true
 }

@@ -10,9 +10,9 @@ const isSupabaseEnabled = import.meta.env.VITE_ENABLE_SUPABASE === 'true'
 
 // 🛡️ Validação das variáveis de ambiente
 if (isSupabaseEnabled && (!supabaseUrl || !supabaseAnonKey)) {
-  console.error('🚨 Supabase configurado mas variáveis de ambiente faltando!')
-  console.error('Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env')
-  throw new Error('Supabase configuration missing: URL and/or ANON_KEY not provided')
+  console.warn('🚨 Supabase configurado mas variáveis de ambiente faltando!')
+  console.warn('Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env')
+  console.warn('Sistema funcionará em modo offline')
 }
 
 // 🚀 Cliente Supabase configurado - só cria se variáveis existirem

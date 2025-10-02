@@ -70,7 +70,6 @@ class IntegratedPlanningService {
           order_items(
             id,
             quantity,
-            progress_percentage,
             planned_machine_id,
             product:products(name, soropel_code)
           )
@@ -87,8 +86,8 @@ class IntegratedPlanningService {
         .from('machines')
         .select(`
           *,
-          current_bobina:bobinas(reel_number, paper_type),
-          machine_status(efficiency_current, progress_percentage)
+          current_bobina:rolls(roll_code, paper_type),
+          machine_status(efficiency_current)
         `)
         .eq('active', true)
         .order('machine_number')
@@ -154,8 +153,8 @@ class IntegratedPlanningService {
         name: machine.name,
         type: this.mapMachineType(machine.type),
         status: this.mapMachineStatus(machine.status),
-        currentProduct: machine.current_product,
-        currentProgress: machine.machine_status?.[0]?.progress_percentage || 0,
+        currentProduct: 'Aguardando produção', // Campo removido do schema
+        currentProgress: 0, // Valor padrão já que progress_percentage não existe na tabela machine_status
         efficiency: machine.machine_status?.[0]?.efficiency_current || 0,
         weeklyPlanning: machinePlanning,
         plannedOrders: plannedOrders.map(this.mapToPlannedOrderItem),

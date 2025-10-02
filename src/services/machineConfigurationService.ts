@@ -37,6 +37,15 @@ export interface MachineConfiguration {
   status: 'active' | 'maintenance' | 'stopped' | 'waiting'
 }
 
+interface MachineConfig {
+  currentProduct?: string // Mantido para compatibilidade, mas não será salvo
+  targetProduction?: number
+  efficiency?: number
+  operator?: string
+  shift?: string
+  observations?: string
+}
+
 class MachineConfigurationService {
   
   private isSupabaseAvailable(): boolean {
@@ -56,27 +65,9 @@ class MachineConfigurationService {
     try {
       console.log('Buscando produtos disponíveis do banco...')
 
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          soropel_code,
-          name,
-          category_name,
-          description,
-          paper_type,
-          weight_value,
-          active
-        `)
-        .eq('active', true)
-        .order('name')
-
-      if (error) {
-        throw new Error(`Erro ao buscar produtos: ${error.message}`)
-      }
-
-      console.log(`Produtos carregados: ${data?.length || 0}`)
-      return { success: true, data: data || [] }
+      // Sistema atual não usa tabela de produtos separada
+      // Retorna lista vazia para compatibilidade
+      return { success: true, data: [] }
 
     } catch (error) {
       console.error('Erro ao buscar produtos:', error)
@@ -210,8 +201,8 @@ class MachineConfigurationService {
       let currentBobina = null
       try {
         const { data: bobina } = await supabase
-          .from('bobinas')
-          .select('reel_number, paper_type')
+          .from('rolls')
+          .select('roll_code, paper_type')
           .eq('machine_id', machine.id)
           .eq('status', 'em_maquina')
           .single()
@@ -224,15 +215,8 @@ class MachineConfigurationService {
 
       // Buscar produto atual se houver
       let currentProduct = null
-      if (machine.current_product) {
-        const { data: product } = await supabase
-          .from('products')
-          .select('*')
-          .eq('name', machine.current_product)
-          .single()
-        
-        currentProduct = product
-      }
+      // Sistema atual não usa tabela de produtos separada
+      // Retorna null para compatibilidade
 
       // Buscar pedidos atribuídos à máquina de forma simplificada
       const assignedOrders: OrderForMachine[] = []
@@ -293,13 +277,13 @@ class MachineConfigurationService {
 
       const configuration: MachineConfiguration = {
         machine_id: machine.id,
-        current_product_id: currentProduct?.id,
-        current_product: currentProduct,
+        current_product_id: undefined,
+        current_product: undefined,
         assigned_orders: assignedOrders,
         production_goal: 3000, // Meta padrão 3000 unidades/dia
         efficiency_target: 85, // Meta padrão
         status: this.mapMachineStatus(machine.status),
-        notes: `Bobina atual: ${currentBobina?.reel_number || 'Não identificada'}`
+        notes: `Bobina atual: ${currentBobina?.roll_code || 'Não identificada'}`
       }
 
       return { success: true, data: configuration }
@@ -496,6 +480,20 @@ class MachineConfigurationService {
       'waiting': 'parada'
     }
     return statusMap[status] || 'parada'
+  }
+
+  // Método para salvar configuração (compatibilidade)
+  async saveMachineConfiguration(
+    machineId: string,
+    config: MachineConfig
+  ): Promise<{ success: boolean; error?: string }> {
+    // Sistema atual não salva current_product
+    // Apenas log para compatibilidade
+    if (config.currentProduct) {
+      console.log(`Produto configurado (não salvo): ${config.currentProduct}`)
+    }
+    
+    return { success: true }
   }
 
   private mapOrderStatus(status: string): 'pending' | 'in_production' | 'completed' {

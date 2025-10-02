@@ -55,33 +55,173 @@ export const useNovoPedido = () => {
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
 
+  // Função auxiliar para aguardar o elemento de vídeo estar disponível
+  const waitForVideoElement = useCallback(async (maxAttempts = 10, delay = 100): Promise<HTMLVideoElement> => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      
+      const checkElement = () => {
+        attempts++;
+        console.log(`🔍 Tentativa ${attempts}/${maxAttempts} - Verificando elemento de vídeo...`);
+        
+        if (videoRef.current) {
+          console.log('✅ Elemento de vídeo encontrado!');
+          resolve(videoRef.current);
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error('❌ Elemento de vídeo não encontrado após múltiplas tentativas');
+          reject(new Error('Elemento de vídeo não encontrado após aguardar'));
+          return;
+        }
+        
+        setTimeout(checkElement, delay);
+      };
+      
+      checkElement();
+    });
+  }, []);
+
+  // Função para verificar dispositivos de câmera disponíveis
+  const checkCameraDevices = useCallback(async (): Promise<MediaDeviceInfo[]> => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        console.log('⚠️ enumerateDevices não suportado')
+        return []
+      }
+      
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      
+      console.log(`📹 Dispositivos de vídeo encontrados: ${videoDevices.length}`)
+      videoDevices.forEach((device, index) => {
+        console.log(`  ${index + 1}. ${device.label || `Câmera ${index + 1}`} (${device.deviceId})`)
+      })
+      
+      return videoDevices
+    } catch (error) {
+      console.error('❌ Erro ao verificar dispositivos:', error)
+      return []
+    }
+  }, [])
+
   // Ativação da câmera
   const activateCamera = useCallback(async () => {
     try {
-      setCameraState(prev => ({ ...prev, isReady: false }));
+      console.log('📹 Iniciando ativação da câmera...')
       
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraState({
-          isActive: true,
-          isReady: true,
-          hasImage: false
-        });
+      // Primeiro, definir o estado como ativo para renderizar o elemento de vídeo
+      setCameraState(prev => ({ ...prev, isActive: true, isReady: false }));
+      
+      // Aguardar o elemento de vídeo estar disponível após renderização
+      console.log('⏳ Aguardando elemento de vídeo estar disponível...');
+      const videoElement = await waitForVideoElement(15, 200); // Mais tentativas e delay maior
+      
+      if (!videoElement) {
+        throw new Error('Elemento de vídeo não encontrado após aguardar')
       }
-    } catch (error) {
-      console.error('Erro ao ativar câmera:', error);
-      setCameraState(prev => ({ ...prev, isReady: true }));
-      showNotification({ message: '❌ Erro ao ativar câmera', type: 'error' });
+
+      // Verificar se getUserMedia está disponível
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('MediaDevicesNotSupported')
+      }
+
+      // Verificar dispositivos de câmera disponíveis
+      console.log('🔍 Verificando dispositivos de câmera disponíveis...')
+      const videoDevices = await checkCameraDevices()
+      
+      if (videoDevices.length === 0) {
+        throw new Error('NoVideoDevicesFound')
+      }
+
+      console.log('📹 Tentando acesso à câmera...')
+      
+      // Tentar acesso mais simples possível
+      let stream: MediaStream | null = null
+      
+      try {
+        // Primeira tentativa: câmera traseira
+        console.log('🔄 Tentativa 1: Câmera traseira (environment)')
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        })
+        console.log('✅ Câmera traseira ativada!')
+      } catch (error) {
+        console.log('⚠️ Câmera traseira falhou, tentando câmera frontal...')
+        try {
+          // Segunda tentativa: câmera frontal
+          console.log('🔄 Tentativa 2: Câmera frontal (user)')
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' }
+          })
+          console.log('✅ Câmera frontal ativada!')
+        } catch (error) {
+          console.log('⚠️ Câmera frontal falhou, tentando qualquer câmera...')
+          try {
+            // Terceira tentativa: qualquer câmera disponível
+            console.log('🔄 Tentativa 3: Qualquer câmera disponível')
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true
+            })
+            console.log('✅ Câmera genérica ativada!')
+          } catch (error) {
+            // Quarta tentativa: usar deviceId específico do primeiro dispositivo
+            if (videoDevices.length > 0) {
+              console.log('🔄 Tentativa 4: Usando deviceId específico')
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: videoDevices[0].deviceId }
+              })
+              console.log('✅ Câmera específica ativada!')
+            } else {
+              throw error
+            }
+          }
+        }
+      }
+
+      if (stream && videoElement) {
+        // Verificar novamente se o elemento ainda existe
+        if (!videoRef.current) {
+          stream.getTracks().forEach(track => track.stop());
+          throw new Error('Elemento de vídeo foi removido durante a inicialização');
+        }
+        
+        videoRef.current.srcObject = stream
+        setCameraState(prev => ({ ...prev, isActive: true, isReady: true }))
+        console.log('✅ Stream de vídeo configurado com sucesso!')
+      } else {
+        throw new Error('Não foi possível obter stream de vídeo')
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao ativar câmera:', error)
+      
+      let message = 'Erro desconhecido ao acessar câmera'
+      
+      if (error.name === 'NotAllowedError') {
+        message = 'Permissão de câmera negada. Permita o acesso à câmera nas configurações do navegador.'
+      } else if (error.name === 'NotFoundError') {
+        message = 'Nenhuma câmera foi encontrada neste dispositivo. Verifique se há uma câmera conectada.'
+      } else if (error.name === 'NotReadableError') {
+        message = 'Câmera está sendo usada por outro aplicativo. Feche outros programas que possam estar usando a câmera.'
+      } else if (error.message === 'MediaDevicesNotSupported') {
+        message = 'Seu navegador não suporta acesso à câmera. Tente usar Chrome, Firefox ou Safari.'
+      } else if (error.message === 'NoVideoDevicesFound') {
+        message = 'Nenhum dispositivo de câmera foi detectado. Conecte uma câmera ou webcam ao seu dispositivo.'
+      } else if (error.message.includes('Elemento de vídeo não encontrado')) {
+        message = 'Erro interno: elemento de vídeo não está disponível. Tente recarregar a página.'
+      }
+      
+      // Resetar estado em caso de erro
+      setCameraState(prev => ({ ...prev, isActive: false, isReady: false }))
+      
+      showNotification({
+        message: `Erro ao ativar câmera: ${message}`,
+        type: 'error'
+      })
     }
-  }, [showNotification]);
+  }, [showNotification, waitForVideoElement, checkCameraDevices])
 
   // Captura de imagem
   const captureImage = useCallback(async () => {

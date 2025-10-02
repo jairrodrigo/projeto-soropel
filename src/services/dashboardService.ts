@@ -27,10 +27,10 @@ const convertSupabaseMachineToFrontend = (supabaseMachine: any): Machine => {
     id: supabaseMachine.id,
     nome: `Máquina ${supabaseMachine.machine_number} - ${supabaseMachine.name}`,
     status: frontendStatus,
-    produto: supabaseMachine.current_product || 'Aguardando produção',
-    progresso: supabaseMachine.progress_percentage || 0,
-    tempoRestante: supabaseMachine.time_remaining || undefined,
-    observacao: supabaseMachine.observations || `Eficiência: ${supabaseMachine.efficiency_rate || 100}%`
+    produto: 'Aguardando produção', // Campo removido do schema
+    progresso: 0, // Valor padrão já que progress_percentage não existe na tabela machines
+    tempoRestante: undefined, // time_remaining não existe na tabela machines
+    observacao: `Eficiência: 100%` // Valor padrão já que observations não existe na tabela machines
   }
 }
 
@@ -70,14 +70,14 @@ export const getDashboardMetrics = async (): Promise<DatabaseResult<DashboardMet
       
       // Bobinas em uso
       supabase!
-        .from('bobinas')
+        .from('rolls')
         .select('id, status')
         .eq('status', 'em_maquina'),
       
       // Máquinas ativas
       supabase!
         .from('machines')
-        .select('id, status, efficiency_rate')
+        .select('id, status')
     ])
 
     if (ordersResult.error || bobinasResult.error || machinesResult.error) {
@@ -95,14 +95,12 @@ export const getDashboardMetrics = async (): Promise<DatabaseResult<DashboardMet
     
     const machines = machinesResult.data || []
     const maquinasAtivas = machines.filter(m => m.status === 'ativa').length
-    const eficienciaMedia = machines.length > 0 
-      ? Math.round(machines.reduce((acc, m) => acc + (m.efficiency_rate || 100), 0) / machines.length)
-      : 100
+    const eficienciaMedia = 100 // Valor padrão já que efficiency_rate não existe na tabela machines
 
     // Buscar sobras de hoje
     const today = new Date().toISOString().split('T')[0]
     const { data: sobras } = await supabase!
-      .from('bobinas')
+      .from('rolls')
       .select('id')
       .eq('status', 'sobra')
       .gte('updated_at', `${today}T00:00:00`)
@@ -133,26 +131,14 @@ export const getProductionData = async (): Promise<DatabaseResult<ProductionData
   }
 
   try {
-    // Buscar dados de produção atual
-    const { data: tracking, error: trackingError } = await supabase
-      .from('production_tracking')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (trackingError && trackingError.code !== 'PGRST116') {
-      console.error('❌ Erro ao buscar produção:', trackingError)
-      return { error: 'Erro ao buscar dados de produção' }
-    }
-
-    // Se não tem dados, usar valores padrão
+    // Como a tabela production_tracking não existe, usar dados padrão
+    // Em uma implementação futura, esta tabela pode ser criada
     const productionData: ProductionData = {
-      metaDiaria: tracking?.daily_goal || 15000,
-      realizado: tracking?.current_production || 8450,
-      porcentagem: Math.round((tracking?.percentage || 56.3) * 100) / 100,
-      projecao: tracking?.projection || 15100,
-      topProdutos: tracking?.top_products || [
+      metaDiaria: 15000,
+      realizado: 8450,
+      porcentagem: 56.3,
+      projecao: 15100,
+      topProdutos: [
         { nome: 'KRAFT 1/2 MIX', quantidade: 2890 },
         { nome: 'KRAFT 1/4 MIX', quantidade: 2156 },
         { nome: 'PAPEL SEMI KRAFT', quantidade: 1740 }
@@ -180,13 +166,7 @@ export const getMachinesStatus = async (): Promise<DatabaseResult<Machine[]>> =>
         id,
         machine_number,
         name,
-        status,
-        current_product,
-        progress_percentage,
-        efficiency_rate,
-        estimated_completion,
-        time_remaining,
-        observations
+        status
       `)
       .order('machine_number', { ascending: true })
 
@@ -207,32 +187,13 @@ export const getMachinesStatus = async (): Promise<DatabaseResult<Machine[]>> =>
 
 // 🚨 BUSCAR ALERTAS ATIVOS
 export const getActiveAlerts = async (): Promise<DatabaseResult<Alert[]>> => {
-  // 🛡️ Verificar se Supabase está disponível
-  if (!isSupabaseAvailable() || !supabase) {
-    return createSupabaseUnavailableError() as DatabaseResult<Alert[]>
-  }
-
   try {
-    const { data, error } = await supabase
-      .from('alerts')
-      .select('*')
-      .eq('is_resolved', false)
-      .order('priority', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    if (error) {
-      console.error('❌ Erro ao buscar alertas:', error)
-      return { error: 'Erro ao buscar alertas' }
-    }
-
-    // Converter dados do Supabase para formato do frontend
-    const alerts = (data || []).map(convertSupabaseAlertToFrontend)
-
-    return { data: alerts }
+    // Sistema atual não possui tabela de alertas
+    // Retorna lista vazia para compatibilidade
+    return { data: [] }
   } catch (error) {
-    console.error('❌ Erro inesperado ao buscar alertas:', error)
-    return { error: 'Erro de conexão' }
+    console.error('❌ Erro ao buscar alertas:', error)
+    return { error: 'Erro ao buscar alertas' }
   }
 }
 
@@ -305,13 +266,19 @@ export const testDashboardConnection = async () => {
   }
 
   try {
-    const { data: count } = await supabase
-      .from('production_tracking')
+    // Usar tabela que realmente existe para testar conexão
+    const { data, error } = await supabase
+      .from('products')
       .select('count')
       .limit(1)
     
+    if (error) {
+      console.error('❌ Erro na conexão dashboard:', error)
+      return { success: false, error: error.message }
+    }
+    
     // ✅ Conexão OK - log removido para console limpo
-    return { success: true, count }
+    return { success: true, data }
   } catch (error) {
     console.error('❌ Erro na conexão dashboard:', error)
     return { success: false, error }

@@ -158,7 +158,7 @@ export const useGestaoPedidosStore = create<GestaoPedidosState>((set, get) => ({
             prioridade: convertSupabasePriorityToStorePriority(order.priority),
             dataEntrega: order.delivery_date || new Date().toISOString().split('T')[0],
             quantidadeTotal: order.total_units || 0,
-            progresso: order.progress_percentage || 0,
+            progresso: 0, // Valor padrão já que progress_percentage não existe na tabela orders
             tipo: order.tipo || 'neutro',
             produtos: produtos,
             maquinaSugerida: 'A definir',

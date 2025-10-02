@@ -18,16 +18,26 @@ interface SupabaseMachine {
   status: 'ativa' | 'manutencao' | 'parada'
   max_width: number | null
   max_height: number | null
-  efficiency_rate: number
   last_maintenance: string | null
   created_at: string
   updated_at: string
-  current_product: string | null
   current_bobina_id: string | null
   progress_percentage: number
-  estimated_completion: string | null
   time_remaining: string | null
   observations: string | null
+  current_product?: string | null
+}
+
+
+
+export interface MachineFromDB {
+  id: number
+  name: string
+  machine_number: number
+  status: string
+  active: boolean
+  created_at: string
+  updated_at: string
 }
 
 interface SupabaseMachineStatus {
@@ -36,7 +46,6 @@ interface SupabaseMachineStatus {
   current_product: string | null
   current_order_id: string | null
   progress_percentage: number
-  estimated_completion: string | null
   time_remaining: string | null
   efficiency_current: number
   observations: string | null
@@ -107,18 +116,19 @@ const convertSupabaseMachineToFrontend = (
     return { current, target }
   }
 
-  const production = calculateProduction(machine.progress_percentage)
+  const progress = machineStatus?.progress_percentage || 0
+  const production = calculateProduction(progress)
   
   return {
     id: machine.machine_number,
     name: machine.name,
     status: statusMap[machine.status] || 'stopped',
-    currentProduct: machineStatus?.current_product || machine.current_product || 'Sem produto',
-    progress: machineStatus?.progress_percentage || machine.progress_percentage,
+    currentProduct: 'Aguardando produção', // Campo removido do schema
+    progress: progress,
     targetProduction: production.target,
     currentProduction: production.current,
-    efficiency: machineStatus?.efficiency_current || machine.efficiency_rate || 0,
-    timeRemaining: formatTimeRemaining(machineStatus?.time_remaining || machine.time_remaining),
+    efficiency: machineStatus?.efficiency_current || 0, // Valor padrão já que efficiency_rate não existe na tabela machines
+    timeRemaining: formatTimeRemaining(machineStatus?.time_remaining),
     lastMaintenance: machine.last_maintenance 
       ? new Date(machine.last_maintenance).toLocaleDateString('pt-BR') 
       : 'N/A',
@@ -150,15 +160,13 @@ export class MachinesService {
         .from('machines')
         .select(`
           *,
-          bobinas:bobinas!machines_current_bobina_id_fkey(
-            reel_number,
+          bobinas:rolls!machines_current_bobina_id_fkey(
+            roll_code,
             paper_type,
-            current_weight,
-            product_in_production
+            weight
           ),
           current_order:order_items!order_items_machine_id_fkey(
             quantity,
-            progress_percentage,
             status,
             order:orders(order_number),
             product:products(name)
@@ -313,9 +321,11 @@ export class MachinesService {
       // Atualizar configurações
       const updates: any = { updated_at: new Date().toISOString() }
       
-      if (config.currentProduct) {
-        updates.current_product = config.currentProduct
-      }
+      // Remover current_product pois não existe no schema
+  if (config.currentProduct) {
+    // Campo removido - não atualizar
+    console.log('Campo current_product removido do schema')
+  }
 
       const { error: updateError } = await supabase
         .from('machines')

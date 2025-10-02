@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Câmera - Diagnóstico</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe6e6; border-left: 4px solid #ff0000; }
+        .success { background: #e6ffe6; border-left: 4px solid #00aa00; }
+        .info { background: #e6f3ff; border-left: 4px solid #0066cc; }
+        button { padding: 10px 20px; margin: 10px 0; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico de Câmera</h1>
+    <button onclick="testCameraDevices()">Testar Dispositivos de Câmera</button>
+    <button onclick="clearLogs()">Limpar Logs</button>
+    
+    <div id="logs"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logsDiv.appendChild(logDiv);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testCameraDevices() {
+            clearLogs();
+            log('🔍 Iniciando teste de dispositivos de câmera...', 'info');
+
+            try {
+                // Verificar se navigator.mediaDevices está disponível
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                    log('❌ navigator.mediaDevices não está disponível neste navegador', 'error');
+                    return;
+                }
+
+                log('✅ navigator.mediaDevices disponível', 'success');
+
+                // Verificar se está em HTTPS ou localhost
+                const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                log(`🔒 Contexto seguro: ${isSecure ? 'Sim' : 'Não'} (${location.protocol}//${location.hostname})`, isSecure ? 'success' : 'error');
+
+                // Listar todos os dispositivos
+                log('📱 Enumerando dispositivos...', 'info');
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                log(`📱 Total de dispositivos encontrados: ${devices.length}`, 'info');
+                
+                devices.forEach((device, index) => {
+                    log(`Dispositivo ${index + 1}: ${device.kind} - ${device.label || 'Sem nome'} (ID: ${device.deviceId.substring(0, 20)}...)`, 'info');
+                });
+
+                // Filtrar dispositivos de vídeo
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                log(`📹 Dispositivos de vídeo encontrados: ${videoDevices.length}`, videoDevices.length > 0 ? 'success' : 'error');
+                
+                if (videoDevices.length === 0) {
+                    log('❌ ERRO: Nenhum dispositivo de câmera encontrado!', 'error');
+                    log('💡 Possíveis soluções:', 'info');
+                    log('   • Conecte uma câmera USB ou webcam', 'info');
+                    log('   • Verifique se a câmera não está sendo usada por outro aplicativo', 'info');
+                    log('   • Reinicie o navegador e tente novamente', 'info');
+                    log('   • Verifique as configurações de privacidade do navegador', 'info');
+                    return;
+                }
+
+                videoDevices.forEach((device, index) => {
+                    const isRearCamera = /back|rear|environment/i.test(device.label);
+                    log(`📹 Câmera ${index + 1}: ${device.label || 'Sem nome'} ${isRearCamera ? '(Traseira)' : '(Frontal/Padrão)'}`, 'success');
+                });
+
+                // Testar acesso à câmera
+                log('🎥 Testando acesso à câmera...', 'info');
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    log('✅ Acesso à câmera bem-sucedido!', 'success');
+                    
+                    // Mostrar informações do stream
+                    const videoTracks = stream.getVideoTracks();
+                    if (videoTracks.length > 0) {
+                        const track = videoTracks[0];
+                        const settings = track.getSettings();
+                        log(`📊 Configurações da câmera: ${settings.width}x${settings.height} @ ${settings.frameRate}fps`, 'success');
+                        log(`📷 Dispositivo ativo: ${track.label}`, 'success');
+                    }
+                    
+                    // Parar o stream
+                    stream.getTracks().forEach(track => track.stop());
+                    log('✅ Stream da câmera finalizado com sucesso', 'success');
+
+                } catch (cameraError) {
+                    log(`❌ ERRO ao acessar câmera: ${cameraError.name} - ${cameraError.message}`, 'error');
+                    
+                    if (cameraError.name === 'NotAllowedError') {
+                        log('💡 Solução: Conceda permissão para acessar a câmera', 'info');
+                    } else if (cameraError.name === 'NotFoundError') {
+                        log('💡 Solução: Verifique se há uma câmera conectada', 'info');
+                    } else if (cameraError.name === 'NotReadableError') {
+                        log('💡 Solução: A câmera pode estar sendo usada por outro aplicativo', 'info');
+                    }
+                }
+
+            } catch (error) {
+                log(`❌ Erro geral no teste: ${error.name} - ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        // Executar teste automaticamente ao carregar a página
+        window.addEventListener('load', () => {
+            log('🚀 Página carregada. Clique em "Testar Dispositivos de Câmera" para iniciar o diagnóstico.', 'info');
+        });
+    </script>
+</body>
+</html>
+

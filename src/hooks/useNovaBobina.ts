@@ -125,99 +125,174 @@ export const useNovaBobina = () => {
     updateFormData({ status })
   }, [updateFormData])
 
+  // Função auxiliar para aguardar o elemento de vídeo estar disponível
+  const waitForVideoElement = useCallback(async (maxAttempts = 10, delay = 100): Promise<HTMLVideoElement> => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      
+      const checkElement = () => {
+        attempts++;
+        console.log(`🔍 Tentativa ${attempts}/${maxAttempts} - Verificando elemento de vídeo...`);
+        
+        if (videoRef.current) {
+          console.log('✅ Elemento de vídeo encontrado!');
+          resolve(videoRef.current);
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error('❌ Elemento de vídeo não encontrado após múltiplas tentativas');
+          reject(new Error('Elemento de vídeo não encontrado após aguardar'));
+          return;
+        }
+        
+        setTimeout(checkElement, delay);
+      };
+      
+      checkElement();
+    });
+  }, []);
+
   // Funções de câmera
+  // Função para verificar dispositivos de câmera disponíveis
+  const checkCameraDevices = useCallback(async (): Promise<MediaDeviceInfo[]> => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        console.log('⚠️ enumerateDevices não suportado')
+        return []
+      }
+      
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      
+      console.log(`📹 Dispositivos de vídeo encontrados: ${videoDevices.length}`)
+      videoDevices.forEach((device, index) => {
+        console.log(`  ${index + 1}. ${device.label || `Câmera ${index + 1}`} (${device.deviceId})`)
+      })
+      
+      return videoDevices
+    } catch (error) {
+      console.error('❌ Erro ao verificar dispositivos:', error)
+      return []
+    }
+  }, [])
+
+  // Ativação da câmera
   const activateCamera = useCallback(async () => {
     try {
-      setCameraState(prev => ({ ...prev, isActive: true }))
+      console.log('📹 Iniciando ativação da câmera...')
+      
+      // Primeiro, definir o estado como ativo para renderizar o elemento de vídeo
+      setCameraState(prev => ({ ...prev, isActive: true, isReady: false }));
+      
+      // Aguardar o elemento de vídeo estar disponível após renderização
+      console.log('⏳ Aguardando elemento de vídeo estar disponível...');
+      const videoElement = await waitForVideoElement(15, 200); // Mais tentativas e delay maior
+      
+      if (!videoElement) {
+        throw new Error('Elemento de vídeo não encontrado após aguardar')
+      }
 
-      // Verifica dispositivos de vídeo disponíveis
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const videoDevices = devices.filter(d => d.kind === 'videoinput')
+      // Verificar se getUserMedia está disponível
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('MediaDevicesNotSupported')
+      }
 
+      // Verificar dispositivos de câmera disponíveis
+      console.log('🔍 Verificando dispositivos de câmera disponíveis...')
+      const videoDevices = await checkCameraDevices()
+      
       if (videoDevices.length === 0) {
-        throw new Error('NoCameraDevices')
+        throw new Error('NoVideoDevicesFound')
       }
 
-      // Preferir câmera traseira se detectada, senão usar a primeira disponível
-      const rearCamera = videoDevices.find(d => /back|rear|environment/i.test(d.label))
-      const targetDeviceId = (rearCamera ?? videoDevices[0]).deviceId
-
-      // Tenta com deviceId explícito (mais confiável em desktop)
-      const constraints: MediaStreamConstraints = {
-        video: { deviceId: { exact: targetDeviceId } }
-      }
-
-      let stream: MediaStream
+      console.log('📹 Tentando acesso à câmera...')
+      
+      // Tentar acesso mais simples possível
+      let stream: MediaStream | null = null
+      
       try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints)
-      } catch (err) {
+        // Primeira tentativa: câmera traseira
+        console.log('🔄 Tentativa 1: Câmera traseira (environment)')
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        })
+        console.log('✅ Câmera traseira ativada!')
+      } catch (error) {
+        console.log('⚠️ Câmera traseira falhou, tentando câmera frontal...')
         try {
-          // Fallback para constraints genéricos com facingMode
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
-        } catch (err2) {
-          // Fallback final: vídeo simples sem constraints
-          stream = await navigator.mediaDevices.getUserMedia({ video: true })
+          // Segunda tentativa: câmera frontal
+          console.log('🔄 Tentativa 2: Câmera frontal (user)')
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' }
+          })
+          console.log('✅ Câmera frontal ativada!')
+        } catch (error) {
+          console.log('⚠️ Câmera frontal falhou, tentando qualquer câmera...')
+          try {
+            // Terceira tentativa: qualquer câmera disponível
+            console.log('🔄 Tentativa 3: Qualquer câmera disponível')
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true
+            })
+            console.log('✅ Câmera genérica ativada!')
+          } catch (error) {
+            // Quarta tentativa: usar deviceId específico do primeiro dispositivo
+            if (videoDevices.length > 0) {
+              console.log('🔄 Tentativa 4: Usando deviceId específico')
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: videoDevices[0].deviceId }
+              })
+              console.log('✅ Câmera específica ativada!')
+            } else {
+              throw error
+            }
+          }
         }
       }
 
-      if (videoRef.current) {
+      if (stream && videoElement) {
+        // Verificar novamente se o elemento ainda existe
+        if (!videoRef.current) {
+          stream.getTracks().forEach(track => track.stop());
+          throw new Error('Elemento de vídeo foi removido durante a inicialização');
+        }
+        
         videoRef.current.srcObject = stream
-        await videoRef.current.play()
+        setCameraState(prev => ({ ...prev, isActive: true, isReady: true }))
+        console.log('✅ Stream de vídeo configurado com sucesso!')
+      } else {
+        throw new Error('Não foi possível obter stream de vídeo')
       }
-
-      // Marca câmera pronta
-      setCameraState(prev => ({ ...prev, isReady: true }))
-
+      
     } catch (error: any) {
-      console.error('Erro ao ativar câmera:', error)
+      console.error('❌ Erro ao ativar câmera:', error)
+      
+      let message = 'Erro desconhecido ao acessar câmera'
+      
+      if (error.name === 'NotAllowedError') {
+        message = 'Permissão de câmera negada. Permita o acesso à câmera nas configurações do navegador.'
+      } else if (error.name === 'NotFoundError') {
+        message = 'Nenhuma câmera foi encontrada neste dispositivo. Verifique se há uma câmera conectada.'
+      } else if (error.name === 'NotReadableError') {
+        message = 'Câmera está sendo usada por outro aplicativo. Feche outros programas que possam estar usando a câmera.'
+      } else if (error.message === 'MediaDevicesNotSupported') {
+        message = 'Seu navegador não suporta acesso à câmera. Tente usar Chrome, Firefox ou Safari.'
+      } else if (error.message === 'NoVideoDevicesFound') {
+        message = 'Nenhum dispositivo de câmera foi detectado. Conecte uma câmera ou webcam ao seu dispositivo.'
+      } else if (error.message.includes('Elemento de vídeo não encontrado')) {
+        message = 'Erro interno: elemento de vídeo não está disponível. Tente recarregar a página.'
+      }
+      
+      // Resetar estado em caso de erro
       setCameraState(prev => ({ ...prev, isActive: false, isReady: false }))
-
-      // Mensagens específicas conforme o erro
-      let message = '❌ Erro ao ativar câmera. Verifique as permissões.'
-      if (error?.name === 'NotAllowedError') {
-        message = '❌ Permissão negada para acessar a câmera. Conceda acesso e tente novamente.'
-      } else if (error?.name === 'NotFoundError' || error?.message === 'NoCameraDevices') {
-        message = '❌ Nenhum dispositivo de câmera foi encontrado. Conecte uma câmera ou verifique as configurações do sistema.'
-      }
-
-      showNotification({ message, type: 'error' })
+      
+      showNotification({
+        message: `Erro ao ativar câmera: ${message}`,
+        type: 'error'
+      })
     }
-  }, [showNotification])
-
-  const captureImage = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) return
-    
-    const canvas = canvasRef.current
-    const video = videoRef.current
-    const context = canvas.getContext('2d')
-    
-    if (!context) return
-    
-    // Configurar canvas com as dimensões do vídeo
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    
-    // Capturar frame do vídeo
-    context.drawImage(video, 0, 0)
-    
-    // Atualizar estado para mostrar imagem capturada
-    setCameraState(prev => ({ ...prev, hasImage: true, isActive: false }))
-    
-    // Parar stream da câmera
-    if (video.srcObject) {
-      const stream = video.srcObject as MediaStream
-      stream.getTracks().forEach(track => track.stop())
-      video.srcObject = null
-    }
-    
-    // Converter para blob para processamento
-    canvas.toBlob(async (blob) => {
-      if (blob) {
-        updateStep(2)
-        await processImage(blob)
-      }
-    }, 'image/jpeg', 0.8)
-  }, [])
+  }, [showNotification, waitForVideoElement, checkCameraDevices])
 
   // 📤 ENVIAR IMAGEM PARA WEBHOOK N8N
   const sendImageToWebhook = useCallback(async (imageBlob: Blob) => {
@@ -296,65 +371,36 @@ export const useNovaBobina = () => {
     }
   }, [showNotification])
 
-  // 🔄 PROCESSAR RESPOSTA DO WEBHOOK N8N
-  const processWebhookResponse = useCallback((webhookData: any) => {
+  // Função para atualizar step
+  const updateStep = useCallback((step: number) => {
+    setFormState(prev => ({ ...prev, currentStep: step }))
+  }, [])
+
+  // 🔄 PROCESSAR RESPOSTA DO WEBHOOK
+  const processWebhookResponse = useCallback(async (webhookData: any) => {
     try {
       console.log('🔄 Processando resposta do webhook:', webhookData)
       
-      if (!webhookData) {
-        console.warn('⚠️ Webhook retornou dados vazios')
-        return false
+      if (webhookData && webhookData.success) {
+        showNotification({
+          message: '✅ Dados processados com sucesso pelo webhook!',
+          type: 'success'
+        })
+        
+        // Atualizar estado com dados do webhook se necessário
+        updateStep(3)
+      } else {
+        console.warn('⚠️ Webhook não retornou sucesso, continuando com processamento local')
+        // Continuar com processamento local se webhook não foi bem-sucedido
       }
-      
-      // Extrair dados do webhook
-      const extractedData = {
-        codigo: webhookData.codigo || '',
-        largura: webhookData.largura || 0,
-        tipoPapel: webhookData.tipoPapel || '',
-        gramatura: webhookData.gramatura || '',
-        fornecedor: webhookData.fornecedor || '',
-        pesoInicial: webhookData.pesoInicial || 0,
-        diametro: webhookData.diametro || 0,
-        condutor: webhookData.condutor || '',
-        confianca: webhookData.confianca || 0,
-        observacoes: webhookData.observacoes || ''
-      }
-      
-      console.log('📋 Dados extraídos do webhook:', extractedData)
-      
-      // Atualizar formulário com os dados extraídos
-      setFormData(prev => ({
-        ...prev,
-        codigoBobina: extractedData.codigo,
-        largura: extractedData.largura.toString(),
-        tipoPapel: extractedData.tipoPapel,
-        gramatura: extractedData.gramatura,
-        fornecedor: extractedData.fornecedor,
-        pesoInicial: extractedData.pesoInicial.toString(),
-        pesoAtual: extractedData.pesoInicial.toString(), // Peso atual = peso inicial inicialmente
-        observacoes: extractedData.observacoes
-      }))
-      
-      console.log('✅ Formulário atualizado com dados do webhook')
-      
-      showNotification({
-        message: `✅ Dados extraídos! Confiança: ${Math.round(extractedData.confianca * 100)}%`,
-        type: 'success'
-      })
-      
-      return true
-      
     } catch (error) {
       console.error('❌ Erro ao processar resposta do webhook:', error)
-      
       showNotification({
-        message: '⚠️ Erro ao processar dados do webhook',
+        message: '⚠️ Erro ao processar resposta do webhook',
         type: 'warning'
       })
-      
-      return false
     }
-  }, [setFormData, showNotification])
+  }, [showNotification, updateStep])
 
   // 📤 PROCESSAMENTO COM WEBHOOK E PREENCHIMENTO AUTOMÁTICO
   const processImage = useCallback(async (imageBlob: Blob) => {
@@ -370,21 +416,19 @@ export const useNovaBobina = () => {
         console.log('✅ Webhook retornou dados:', webhookResult)
         
         // 🔄 Processar resposta do webhook e preencher formulário
-        const success = processWebhookResponse(webhookResult)
+        await processWebhookResponse(webhookResult)
         
         setFormState(prev => ({ 
           ...prev, 
           isProcessing: false, 
-          hasExtractedData: success,
+          hasExtractedData: true,
           currentStep: 3
         }))
         
-        if (success) {
-          showNotification({
-            message: '✅ Formulário preenchido automaticamente!',
-            type: 'success'
-          })
-        }
+        showNotification({
+          message: '✅ Formulário preenchido automaticamente!',
+          type: 'success'
+        })
       } else {
         console.log('⚠️ Webhook não retornou dados, usando dados simulados...')
         
@@ -402,12 +446,12 @@ export const useNovaBobina = () => {
           observacoes: 'Dados simulados - webhook indisponível'
         }
         
-        const success = processWebhookResponse(simulatedData)
+        await processWebhookResponse(simulatedData)
         
         setFormState(prev => ({ 
           ...prev, 
           isProcessing: false, 
-          hasExtractedData: success,
+          hasExtractedData: true,
           currentStep: 3
         }))
       }
@@ -428,6 +472,52 @@ export const useNovaBobina = () => {
     }
   }, [showNotification, sendImageToWebhook, processWebhookResponse])
 
+  const captureImage = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current) return
+    
+    const canvas = canvasRef.current
+    const video = videoRef.current
+    const context = canvas.getContext('2d')
+    
+    if (!context) return
+    
+    // Configurar canvas com as dimensões do vídeo
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    
+    // Capturar frame do vídeo
+    context.drawImage(video, 0, 0)
+    
+    // Atualizar estado para mostrar imagem capturada
+    setCameraState(prev => ({ ...prev, hasImage: true, isActive: false }))
+    
+    // Parar stream da câmera
+    if (video.srcObject) {
+      const stream = video.srcObject as MediaStream
+      stream.getTracks().forEach(track => track.stop())
+      video.srcObject = null
+    }
+    
+    // Converter para blob e enviar para webhook
+    canvas.toBlob(async (blob) => {
+      if (blob) {
+        console.log('📸 Foto capturada, enviando para webhook...')
+        updateStep(2)
+        
+        // Enviar diretamente para webhook
+        const webhookResult = await sendImageToWebhook(blob)
+        
+        if (webhookResult) {
+          // Se webhook retornou dados, processar
+          processWebhookResponse(webhookResult)
+        } else {
+          // Se webhook falhou, continuar com processamento local
+          await processImage(blob)
+        }
+      }
+    }, 'image/jpeg', 0.8)
+  }, [sendImageToWebhook, processWebhookResponse, processImage, updateStep])
+
   // Função para upload de imagem
   const uploadImage = useCallback(() => {
     const input = document.createElement('input')
@@ -445,11 +535,6 @@ export const useNovaBobina = () => {
     
     input.click()
   }, [processImage])
-
-  // Função para atualizar step
-  const updateStep = useCallback((step: number) => {
-    setFormState(prev => ({ ...prev, currentStep: step }))
-  }, [])
 
   // 💾 SALVAR BOBINA REAL NO SUPABASE + NOTIFICAR MÁQUINAS
   const saveBobina = useCallback(async () => {

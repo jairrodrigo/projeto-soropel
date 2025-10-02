@@ -73,12 +73,14 @@ export const MachineGrid: React.FC<MachineGridProps> = ({ machines }) => {
                     </div>
                   )}
                   
-                  <div>
-                    {machine.observacao}
-                    {machine.tempoRestante && (
-                      <span> • {machine.tempoRestante} restantes</span>
-                    )}
-                  </div>
+                  {(machine.observacao || machine.tempoRestante) && (
+                    <div>
+                      {machine.observacao && machine.observacao}
+                      {machine.tempoRestante && (
+                        <span>{machine.observacao ? ' • ' : ''}{machine.tempoRestante} restantes</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )
