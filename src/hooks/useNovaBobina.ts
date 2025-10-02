@@ -526,25 +526,18 @@ export const useNovaBobina = () => {
       video.srcObject = null
     }
     
-    // Converter para blob e enviar para webhook
+    // Converter para blob e processar pela MESMA pipeline do upload
     canvas.toBlob(async (blob) => {
       if (blob) {
-        console.log('📸 Foto capturada, enviando para webhook...')
+        console.log('📸 Foto capturada. Processando imagem (pipeline de upload)...')
         updateStep(2)
-        
-        // Enviar diretamente para webhook
-        const webhookResult = await sendImageToWebhook(blob)
-        
-        if (webhookResult) {
-          // Se webhook retornou dados, processar
-          processWebhookResponse(webhookResult)
-        } else {
-          // Se webhook falhou, continuar com processamento local
-          await processImage(blob)
-        }
+        // Usar exatamente o mesmo fluxo do botão de upload
+        await processImage(blob)
+      } else {
+        showNotification({ message: '❌ Erro ao capturar imagem da câmera', type: 'error' })
       }
     }, 'image/jpeg', 0.8)
-  }, [sendImageToWebhook, processWebhookResponse, processImage, updateStep])
+  }, [processImage, updateStep, showNotification])
 
   // Função para upload de imagem
   const uploadImage = useCallback(() => {
