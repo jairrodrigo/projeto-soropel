@@ -182,6 +182,24 @@ export const useNovaBobina = () => {
     try {
       console.log('📹 Iniciando ativação da câmera...')
       
+      // 🔒 Verificação de contexto seguro (HTTPS ou localhost)
+      const isLocalhost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
+      if (!window.isSecureContext && !isLocalhost) {
+        showNotification({
+          message: 'Acesso à câmera requer HTTPS ou localhost. Use http://localhost:3000 ou configure HTTPS.',
+          type: 'error'
+        })
+        setCameraState(prev => ({ ...prev, isActive: false, isReady: false }))
+        return
+      }
+
+      // 🧼 Garantir que qualquer stream anterior seja parado antes de reativar
+      if (videoRef.current?.srcObject) {
+        const prevStream = videoRef.current.srcObject as MediaStream
+        prevStream.getTracks().forEach(track => track.stop())
+        videoRef.current.srcObject = null
+      }
+
       // Primeiro, definir o estado como ativo para renderizar o elemento de vídeo
       setCameraState(prev => ({ ...prev, isActive: true, isReady: false }));
       
@@ -258,7 +276,17 @@ export const useNovaBobina = () => {
           throw new Error('Elemento de vídeo foi removido durante a inicialização');
         }
         
+        // Definir o stream e iniciar a reprodução do vídeo explicitamente
         videoRef.current.srcObject = stream
+        try {
+          await videoRef.current.play()
+        } catch (playErr: any) {
+          console.warn('⚠️ Falha ao iniciar reprodução do vídeo:', playErr)
+          showNotification({
+            message: 'Falha ao iniciar a visualização da câmera. Interaja com a página e tente novamente.',
+            type: 'warning'
+          })
+        }
         setCameraState(prev => ({ ...prev, isActive: true, isReady: true }))
         console.log('✅ Stream de vídeo configurado com sucesso!')
       } else {
