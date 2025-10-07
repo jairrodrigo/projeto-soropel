@@ -91,23 +91,34 @@ export const useGestaoMaquinasStore = create<GestaoMaquinasState>()(
 
     // Atualizar status da máquina - INTEGRAÇÃO REAL SUPABASE
     updateMachineStatus: async (machineId, status) => {
+      // Usar o status alvo recebido em vez de alternar novamente
+      const nextStatus = status
+
       // Atualizar UI imediatamente para responsividade
       const machines = get().machines.map(machine => 
         machine.id === machineId 
-          ? { ...machine, status }
+          ? { ...machine, status: nextStatus }
           : machine
       )
       set({ machines })
 
       try {
-        // Chamar service real para persistir no Supabase
-        const success = await MachinesService.updateMachineStatus(machineId, status)
+        // Persistir no Supabase conforme ação
+        let success = false
+        if (nextStatus === 'active') {
+          success = await MachinesService.startMachine(machineId)
+        } else if (nextStatus === 'stopped') {
+          success = await MachinesService.updateMachineStatus(machineId, nextStatus)
+        } else {
+          // Manutenção não altera pela UI de toggle
+          success = true
+        }
         
         if (!success) {
           // Reverter mudança se falhou
           const originalMachines = get().machines.map(machine => 
             machine.id === machineId 
-              ? { ...machine, status: machine.status === status ? 'stopped' : 'active' }
+              ? { ...machine, status }
               : machine
           )
           set({ machines: originalMachines, error: 'Falha ao atualizar status da máquina' })
@@ -122,7 +133,7 @@ export const useGestaoMaquinasStore = create<GestaoMaquinasState>()(
         // Reverter mudança
         const originalMachines = get().machines.map(machine => 
           machine.id === machineId 
-            ? { ...machine, status: machine.status === status ? 'stopped' : 'active' }
+            ? { ...machine, status }
             : machine
         )
         set({ machines: originalMachines, error: 'Erro na comunicação com servidor' })

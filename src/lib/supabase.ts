@@ -16,22 +16,55 @@ if (isSupabaseEnabled && (!supabaseUrl || !supabaseAnonKey)) {
 }
 
 // 🚀 Cliente Supabase configurado - só cria se variáveis existirem
+// Pequeno wrapper para garantir que requisições REST incluam apikey
+const enhancedFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  try {
+    const originalUrl = typeof input === 'string' ? input : (input as Request).url ?? (input as URL).toString()
+    const u = new URL(originalUrl)
+    const base = new URL(supabaseUrl || 'http://localhost')
+
+    // Apenas para chamadas REST do Supabase
+    if (u.origin === base.origin && u.pathname.startsWith('/rest/v1')) {
+      // Garante apikey como query param (fallback caso algum interceptor remova headers)
+      if (supabaseAnonKey && !u.searchParams.has('apikey')) {
+        u.searchParams.set('apikey', supabaseAnonKey)
+      }
+
+      // Garante headers essenciais
+      const headers = new Headers(init?.headers || (typeof input !== 'string' && (input as Request).headers) || {})
+      if (supabaseAnonKey && !headers.has('apikey')) headers.set('apikey', supabaseAnonKey)
+      if (supabaseAnonKey && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${supabaseAnonKey}`)
+
+      return fetch(u.toString(), { ...init, headers })
+    }
+
+    // Demais chamadas seguem padrão
+    return fetch(typeof input === 'string' ? input : (input as any), init)
+  } catch (e) {
+    // Fallback silencioso em caso de erro na construção da URL
+    return fetch(typeof input === 'string' ? input : (input as any), init)
+  }
+}
+
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'sistema-soropel@1.0.0'
-    }
-  }
-})
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      },
+      db: {
+        schema: 'public'
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'sistema-soropel@1.0.0',
+          // Redundância de segurança: mantém apikey/Authorization nos headers
+          ...(supabaseAnonKey ? { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` } : {})
+        },
+        fetch: enhancedFetch
+      }
+    })
   : null // Fallback se variáveis não existirem
 
 // 🎯 Configurações específicas do sistema

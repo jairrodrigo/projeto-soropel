@@ -10,22 +10,15 @@ import type {
 
 // Interfaces para dados do Supabase
 interface SupabaseMachine {
-  id: string
+  id: number
   machine_number: number
   name: string
-  type: string
+  machine_type?: string
   is_special: boolean
   status: 'ativa' | 'manutencao' | 'parada'
-  max_width: number | null
-  max_height: number | null
-  last_maintenance: string | null
+  active?: boolean
   created_at: string
   updated_at: string
-  current_bobina_id: string | null
-  progress_percentage: number
-  time_remaining: string | null
-  observations: string | null
-  current_product?: string | null
 }
 
 
@@ -42,7 +35,7 @@ export interface MachineFromDB {
 
 interface SupabaseMachineStatus {
   id: string
-  machine_id: string
+  machine_id: number
   current_product: string | null
   current_order_id: string | null
   progress_percentage: number
@@ -123,7 +116,7 @@ const convertSupabaseMachineToFrontend = (
     id: machine.machine_number,
     name: machine.name,
     status: statusMap[machine.status] || 'stopped',
-    currentProduct: 'Aguardando produção', // Campo removido do schema
+    currentProduct: machineStatus?.current_product || 'Aguardando produção',
     progress: progress,
     targetProduction: production.target,
     currentProduction: production.current,
@@ -139,7 +132,7 @@ const convertSupabaseMachineToFrontend = (
     operator: machineStatus?.observations?.includes('Operador') 
       ? machineStatus.observations.split('Operador: ')[1]?.split(',')[0] 
       : undefined,
-    type: machine.is_special ? 'special' : typeMap[machine.type] || 'no_print'
+    type: machine.is_special ? 'special' : typeMap[machine.machine_type || 'normal'] || 'no_print'
   }
 }
 
@@ -160,11 +153,6 @@ export class MachinesService {
         .from('machines')
         .select(`
           *,
-          bobinas:rolls!machines_current_bobina_id_fkey(
-            roll_code,
-            paper_type,
-            weight
-          ),
           current_order:order_items!order_items_machine_id_fkey(
             quantity,
             status,
@@ -180,7 +168,7 @@ export class MachinesService {
 
       // Buscar status das máquinas
       const { data: machineStatuses, error: statusError } = await supabase
-        .from('machine_status')
+        .from('machines_status')
         .select('*')
 
       if (statusError) {
@@ -189,11 +177,10 @@ export class MachinesService {
 
       // Combinar dados com informações reais
       const result = machines.map(machine => {
-        const status = machineStatuses?.find(s => s.machine_id === machine.id)
-        const currentOrder = machine.current_order?.find(o => o.status === 'em_producao')
-        const bobina = machine.bobinas?.[0]
+        // Tabela machines_status possui machine_id (FK para machines.id)
+        const status = machineStatuses?.find((s: any) => s.machine_id === machine.id)
         
-        return convertSupabaseMachineToFrontend(machine, status, currentOrder, bobina)
+        return convertSupabaseMachineToFrontend(machine, status)
       })
 
       console.log(`✅ Carregadas ${result.length} máquinas com dados integrados do Supabase`)
@@ -239,12 +226,12 @@ export class MachinesService {
         throw new Error(`Máquina ${machineId} não encontrada`)
       }
 
-      // Atualizar na tabela machines
+      // Atualizar na tabela machines (somente colunas existentes)
+      // Observations não faz parte de 'machines' no schema atual
       const { error: updateError } = await supabase
         .from('machines')
         .update({
           status: statusMap[status],
-          observations: observations || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', machineData.id)
@@ -270,6 +257,78 @@ export class MachinesService {
 
     } catch (error) {
       console.error('Erro ao atualizar status da máquina:', error)
+      return false
+    }
+  }
+
+  /**
+   * Iniciar máquina: cria/atualiza registro em machines_status e seta status 'ativa'
+   */
+  static async startMachine(
+    machineId: number,
+    observations?: string
+  ): Promise<boolean> {
+    if (!checkSupabaseAvailable()) {
+      console.log(`🔄 Simulando início da Máquina ${machineId}`)
+      return true
+    }
+
+    try {
+      // Buscar a máquina pelo ID (inteiro)
+      const { data: machineData, error: findError } = await supabase
+        .from('machines')
+        .select('id')
+        .eq('id', machineId)
+        .single()
+
+      if (findError || !machineData) {
+        throw new Error(`Máquina ${machineId} não encontrada`)
+      }
+
+      // Inserir/atualizar status atual na tabela machines_status
+      const now = new Date().toISOString()
+      const { error: upsertError } = await supabase
+        .from('machines_status')
+        .upsert({
+          machine_id: machineData.id,
+          progress_percentage: 0,
+          time_remaining: null,
+          efficiency_current: 0,
+          observations: observations || null,
+          started_at: now,
+          updated_at: now
+        }, {
+          onConflict: 'machine_id'
+        })
+
+      if (upsertError) {
+        throw new Error(`Erro ao iniciar status da máquina: ${upsertError.message}`)
+      }
+
+      // Atualizar status da máquina para 'ativa'
+      const { error: updateError } = await supabase
+        .from('machines')
+        .update({ status: 'ativa', updated_at: now })
+        .eq('id', machineData.id)
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar máquina: ${updateError.message}`)
+      }
+
+      // Registrar atividade
+      await this.logActivity({
+        type: 'started',
+        title: `Máquina ${machineId} iniciada`,
+        description: 'Produção iniciada pela UI',
+        machine_id: machineData.id,
+        observations
+      })
+
+      console.log(`🚀 Máquina ${machineId} iniciada com sucesso`)
+      return true
+
+    } catch (error) {
+      console.error('Erro ao iniciar máquina:', error)
       return false
     }
   }
