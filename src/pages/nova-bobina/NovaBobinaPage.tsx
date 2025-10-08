@@ -17,6 +17,7 @@ export const NovaBobinaPage: React.FC = () => {
     processedData,
     videoRef,
     canvasRef,
+    displayCanvasRef,
     updateFormData,
     updateStatus,
     activateCamera,
@@ -39,6 +40,8 @@ export const NovaBobinaPage: React.FC = () => {
       setTimeout(() => {
         clearForm()
         setIsSaving(false)
+        // Reativar automaticamente a câmera para capturar a próxima bobina em sequência
+        activateCamera()
       }, 2000)
     } else {
       setIsSaving(false)
@@ -69,6 +72,7 @@ export const NovaBobinaPage: React.FC = () => {
               isProcessing={formState.isProcessing}
               videoRef={videoRef}
               canvasRef={canvasRef}
+              displayCanvasRef={displayCanvasRef}
               onActivateCamera={activateCamera}
               onCaptureImage={captureImage}
               onUploadImage={uploadImage}

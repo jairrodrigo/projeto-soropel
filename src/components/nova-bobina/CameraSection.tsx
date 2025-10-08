@@ -7,7 +7,10 @@ interface CameraSectionProps {
   cameraState: CameraState
   isProcessing?: boolean
   videoRef: React.RefObject<HTMLVideoElement>
+  // Canvas usado para PROCESSAMENTO (offscreen/oculto)
   canvasRef: React.RefObject<HTMLCanvasElement>
+  // Canvas usado para EXIBIÇÃO da imagem capturada
+  displayCanvasRef: React.RefObject<HTMLCanvasElement>
   onActivateCamera: () => void
   onCaptureImage: () => void
   onUploadImage: () => void
@@ -18,6 +21,7 @@ export const CameraSection: React.FC<CameraSectionProps> = ({
   isProcessing = false,
   videoRef,
   canvasRef,
+  displayCanvasRef,
   onActivateCamera,
   onCaptureImage,
   onUploadImage
@@ -82,7 +86,7 @@ export const CameraSection: React.FC<CameraSectionProps> = ({
             <div className="relative h-full">
               {/* Show captured image */}
               <canvas 
-                ref={canvasRef} 
+                ref={displayCanvasRef} 
                 className="w-full h-full object-cover rounded-lg"
                 style={{ display: 'block' }}
               />
@@ -122,7 +126,7 @@ export const CameraSection: React.FC<CameraSectionProps> = ({
           )}
         </div>
 
-        {/* Hidden Canvas for Image Processing */}
+        {/* Hidden Canvas for Image Processing (único canvas para processamento) */}
         <canvas ref={canvasRef} className="hidden" />
 
         {/* Camera Controls */}

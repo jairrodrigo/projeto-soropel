@@ -262,6 +262,33 @@ CREATE INDEX idx_customers_name ON customers(name);
 CREATE INDEX idx_machines_number ON machines(machine_number);
 CREATE INDEX idx_machines_status ON machines(status);
 
+-- =============================================
+-- TABELA: STATUS DAS MÁQUINAS (machines_status)
+-- =============================================
+
+-- Substituir a VIEW anterior por uma TABELA com campos extras
+DROP VIEW IF EXISTS machines_status;
+
+CREATE TABLE IF NOT EXISTS machines_status (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  machine_id UUID REFERENCES machines(id) ON DELETE CASCADE,
+  current_product TEXT,
+  current_order_id UUID,
+  progress_percentage INT DEFAULT 0,
+  time_remaining INTERVAL,
+  efficiency_current NUMERIC DEFAULT 0,
+  observations TEXT,
+  started_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Índices da tabela de status
+CREATE INDEX IF NOT EXISTS idx_machines_status_machine_id ON machines_status(machine_id);
+
+-- Trigger para updated_at da tabela de status
+CREATE TRIGGER update_machines_status_updated_at BEFORE UPDATE ON machines_status
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Pedidos
 CREATE INDEX idx_orders_number ON orders(order_number);
 CREATE INDEX idx_orders_status ON orders(status);

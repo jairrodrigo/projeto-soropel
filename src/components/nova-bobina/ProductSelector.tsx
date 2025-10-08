@@ -114,15 +114,25 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
         
         <div className="flex items-center space-x-2 flex-shrink-0">
           {selectedProduct && !disabled && (
-            <button
+            <span
+              role="button"
+              tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation()
                 handleClear()
               }}
-              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleClear()
+                }
+              }}
+              className="p-1 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+              aria-label="Limpar produto selecionado"
             >
               <X className="w-4 h-4" />
-            </button>
+            </span>
           )}
           <Search className={cn(
             "w-5 h-5 transition-transform",

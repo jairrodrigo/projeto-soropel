@@ -106,6 +106,8 @@ export const useNovaBobina = () => {
   // Refs para elementos do DOM
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Canvas dedicado para EXIBIÇÃO da imagem capturada (evita conflito com canvas de processamento)
+  const displayCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Funções para gerenciar formulário
   const updateFormData = useCallback((updates: Partial<BobinaFormData>) => {
@@ -359,14 +361,17 @@ export const useNovaBobina = () => {
         base64Length: payload.data.base64.length
       })
       
+      // Usar URL do webhook via env quando disponível
+      const webhookUrl = (import.meta as any)?.env?.VITE_WEBHOOK_URL || 'https://n8n.botneural.online/webhook/fotosbobinas'
+
       console.log('🔍 Request details:', {
-        url: 'https://n8n.botneural.online/webhook/fotosbobinas',
+        url: webhookUrl,
         method: 'POST',
         bodyType: 'JSON',
         contentType: 'application/json'
       })
-      
-      const response = await fetch('https://n8n.botneural.online/webhook/fotosbobinas', {
+
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: {
@@ -408,18 +413,52 @@ export const useNovaBobina = () => {
   const processWebhookResponse = useCallback(async (webhookData: any) => {
     try {
       console.log('🔄 Processando resposta do webhook:', webhookData)
-      
+
+      // Alguns fluxos retornam em webhookData.data; outros retornam direto
+      const dados = webhookData?.data ?? webhookData ?? {}
+
+      // Extrair e normalizar campos esperados
+      const codigo = dados.codigo ?? dados.code ?? dados.codigoBobina ?? ''
+      const tipoPapel = validateTipoPapel(dados.tipoPapel)
+      const gramatura = validateGramatura(dados.gramatura)
+      const fornecedor = validateFornecedor(dados.fornecedor)
+      const larguraValidada = validateLargura(dados.largura)
+      const pesoInicialNum = typeof dados.pesoInicial === 'number' ? dados.pesoInicial : Number(dados.pesoInicial ?? 0)
+      const observacoes = dados.observacoes ?? ''
+
+      // Atualizar formulário com dados extraídos
+      updateFormData({
+        codigoBobina: codigo || '',
+        tipoPapel: tipoPapel || '',
+        gramatura: gramatura || '',
+        fornecedor: fornecedor || '',
+        largura: String(larguraValidada || ''),
+        pesoInicial: pesoInicialNum || 0,
+        observacoes
+      })
+
+      // Guardar dados processados para exibição em componentes de status
+      setProcessedData({
+        codigo: codigo || '',
+        tipoPapel: tipoPapel || '',
+        gramatura: gramatura || '',
+        largura: String(larguraValidada || ''),
+        fornecedor: fornecedor || '',
+        pesoInicial: pesoInicialNum || 0
+      })
+
+      // Atualizar estado de formulário
+      setFormState(prev => ({ ...prev, hasExtractedData: true }))
+      updateStep(3)
+
+      // Notificação de sucesso quando o webhook sinalizar sucesso
       if (webhookData && webhookData.success) {
         showNotification({
           message: '✅ Dados processados com sucesso pelo webhook!',
           type: 'success'
         })
-        
-        // Atualizar estado com dados do webhook se necessário
-        updateStep(3)
       } else {
-        console.warn('⚠️ Webhook não retornou sucesso, continuando com processamento local')
-        // Continuar com processamento local se webhook não foi bem-sucedido
+        console.warn('⚠️ Webhook não retornou sucesso, preenchendo com dados local/simulados')
       }
     } catch (error) {
       console.error('❌ Erro ao processar resposta do webhook:', error)
@@ -428,7 +467,7 @@ export const useNovaBobina = () => {
         type: 'warning'
       })
     }
-  }, [showNotification, updateStep])
+  }, [showNotification, updateFormData, setProcessedData, updateStep])
 
   // 📤 PROCESSAMENTO COM WEBHOOK E PREENCHIMENTO AUTOMÁTICO
   const processImage = useCallback(async (imageBlob: Blob) => {
@@ -518,6 +557,18 @@ export const useNovaBobina = () => {
     
     // Atualizar estado para mostrar imagem capturada
     setCameraState(prev => ({ ...prev, hasImage: true, isActive: false }))
+
+    // Copiar o conteúdo do canvas de processamento para o canvas de EXIBIÇÃO
+    // (aguarda próximo tick para garantir que o canvas de exibição esteja montado)
+    setTimeout(() => {
+      const displayCanvas = displayCanvasRef.current
+      if (displayCanvas) {
+        displayCanvas.width = canvas.width
+        displayCanvas.height = canvas.height
+        const dctx = displayCanvas.getContext('2d')
+        dctx?.drawImage(canvas, 0, 0)
+      }
+    }, 0)
     
     // Parar stream da câmera
     if (video.srcObject) {
@@ -577,17 +628,33 @@ export const useNovaBobina = () => {
       }
       
       // Garantir que todos os campos obrigatórios estão preenchidos
+      const normalizedStatusForData = (formData.status || 'estoque').replace('em-maquina', 'em_maquina') as 'estoque' | 'em_maquina' | 'sobra' | 'acabou'
+
+      // Quando for 'sobra', usar o peso informado no campo "Peso da Sobra (kg)";
+      // caso contrário, usar pesoAtual (ou cair para pesoInicial)
+      const pesoAtualComputed = normalizedStatusForData === 'sobra'
+        ? (formData.pesoSobra || formData.pesoAtual || formData.pesoInicial || 0)
+        : (formData.pesoAtual || formData.pesoInicial || 0)
+
+      // Combinar observações gerais com a descrição de sobra, se houver
+      const observacoesComputed = [
+        formData.observacoes || 'Dados extraídos via IA - OCR Real',
+        (formData.status === 'sobra' && formData.obsSobra) ? `Obs. Sobra: ${formData.obsSobra}` : ''
+      ].filter(Boolean).join(' | ')
+
       const bobinaData: NewBobinaData = {
         codigo: formData.codigoBobina,
         supplier_name: formData.fornecedor || 'FORNECEDOR DETECTADO',
         paper_type_name: formData.tipoPapel || 'MIX',
         gramatura: parseInt(formData.gramatura) || 38,
         peso_inicial: formData.pesoInicial || 151,
-        peso_atual: formData.pesoAtual || formData.pesoInicial || 151,
-        largura: 520, // Valor padrão se não extraído
+        peso_atual: pesoAtualComputed,
+        // Garantir largura válida conforme helpers de validação
+        largura: validateLargura(formData.largura),
+        // Diametro não existe no schema, será usado como length se disponível
         diametro: 800, // Valor padrão se não extraído
-        status: (formData.status || 'estoque').replace('em-maquina', 'em_maquina') as 'estoque' | 'em_maquina' | 'sobra' | 'acabou',
-        observacoes: formData.observacoes || 'Dados extraídos via IA - OCR Real',
+        status: normalizedStatusForData,
+        observacoes: observacoesComputed,
         data_entrada: formData.dataEntrada || new Date().toISOString().split('T')[0]
       }
       
@@ -691,11 +758,21 @@ export const useNovaBobina = () => {
       return
     }
     
+    // Manter o peso inicial da bobina conforme o rótulo (já capturado no formulário)
+    const pesoInicialRotulo = formData.pesoInicial || 0
+    const aproveitamento = pesoInicialRotulo > 0 
+      ? Math.round((pesoSobra / pesoInicialRotulo) * 100) 
+      : undefined
+
     updateFormData({
-      status: 'estoque',
-      pesoInicial: pesoSobra,
+      // Registrar como 'sobra' para refletir o estado real
+      status: 'sobra',
+      // Não sobrescrever o peso inicial com o peso da sobra
+      pesoInicial: pesoInicialRotulo,
+      // O peso atual passa a ser o peso da sobra
       pesoAtual: pesoSobra,
-      observacoes: `Bobina retornada ao estoque como sobra aproveitável. Peso original: ${pesoSobra}kg. Data de retorno: ${new Date().toLocaleDateString('pt-BR')}.`
+      // Registrar ambos os pesos e o percentual de aproveitamento
+      observacoes: `Bobina marcada como SOBRA. Peso inicial (rótulo): ${pesoInicialRotulo}kg. Peso da sobra: ${pesoSobra}kg.${aproveitamento !== undefined ? ` Aproveitamento: ${aproveitamento}%` : ''}. Data: ${new Date().toLocaleDateString('pt-BR')}. ${formData.obsSobra ? `Obs: ${formData.obsSobra}` : ''}`
     })
     
     // ✅ Sobra retornada - feedback visual já disponível no StatusControl
@@ -711,6 +788,7 @@ export const useNovaBobina = () => {
     // Refs
     videoRef,
     canvasRef,
+    displayCanvasRef,
     
     // Funções
     updateFormData,

@@ -182,15 +182,37 @@ export const upsertBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
       // ✅ Log removido para console limpo
       // ✅ Log removido para console limpo
       
+      const normalizeStatusForDb = (status?: string): 'estoque' | 'em_maquina' | 'sobra' | 'acabou' => {
+        switch (status) {
+          case 'em_maquina':
+          case 'estoque':
+          case 'sobra':
+          case 'acabou':
+            return status as 'estoque' | 'em_maquina' | 'sobra' | 'acabou'
+          case 'em-maquina':
+            return 'em_maquina'
+          default:
+            return 'estoque'
+        }
+      }
+
+      const normalizedStatus = normalizeStatusForDb(bobinaData.status)
+
       const updateData: any = {
-        status: bobinaData.status || 'estoque',
-        current_weight: bobinaData.peso_atual || bobinaData.peso_inicial,
+        status: normalizedStatus,
+        // O schema usa "weight" para peso da bobina
+        weight: bobinaData.peso_atual ?? bobinaData.peso_inicial,
+        // Se existir coluna de notas/observações, enviar
+        ...(bobinaData.observacoes ? { notes: bobinaData.observacoes } : {})
       }
       
-      // Se for mudança para sobra, atualizar observações
-      if (bobinaData.status === 'sobra') {
-        updateData.observacoes = `Atualizado para sobra em ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR')}`
+      // Se status for em_maquina, registrar data de instalação
+      if (normalizedStatus === 'em_maquina') {
+        updateData.installation_date = new Date().toISOString().split('T')[0]
       }
+
+      // Se for mudança para sobra, atualizar observações
+      // Observações não existem no schema atual de rolls, então ignoramos aqui
 
       const { data: updatedBobina, error: updateError } = await supabase!
         .from('rolls')
@@ -237,17 +259,42 @@ export const createBobina = async (bobinaData: NewBobinaData): Promise<DatabaseR
       paper_type: bobinaData.paper_type_name
     })
     
+    const normalizeStatusForDb = (status?: string): 'estoque' | 'em_maquina' | 'sobra' | 'acabou' => {
+      switch (status) {
+        case 'em_maquina':
+        case 'estoque':
+        case 'sobra':
+        case 'acabou':
+          return status as 'estoque' | 'em_maquina' | 'sobra' | 'acabou'
+        case 'em-maquina':
+          return 'em_maquina'
+        default:
+          return 'estoque'
+      }
+    }
+
+    const normalizedStatus = normalizeStatusForDb(bobinaData.status)
+
     const { data: newBobina, error: bobinaError } = await supabase
       .from('rolls')
       .insert([{
         roll_code: bobinaData.codigo,
         supplier: bobinaData.supplier_name,
         paper_type: bobinaData.paper_type_name,
-        width: bobinaData.largura,
-        weight: bobinaData.gramatura,
-        length: bobinaData.diametro,
-        status: 'estoque',
-        received_date: new Date().toISOString().split('T')[0],
+        // width é NOT NULL no schema
+        width: bobinaData.largura ?? 0,
+        // Ajuste: para status 'sobra', persistir o peso_atual (peso da sobra). Caso contrário, usar peso_inicial.
+        weight: normalizedStatus === 'sobra'
+          ? (bobinaData.peso_atual ?? bobinaData.peso_inicial)
+          : bobinaData.peso_inicial,
+        // length é opcional; só enviamos se disponível
+        ...(bobinaData.diametro !== undefined ? { length: bobinaData.diametro } : {}),
+        status: normalizedStatus,
+        received_date: bobinaData.data_entrada || new Date().toISOString().split('T')[0],
+        // Se já entrar em máquina, registramos data de instalação
+        ...(normalizedStatus === 'em_maquina' ? { installation_date: new Date().toISOString().split('T')[0] } : {}),
+        // Se existir coluna de notas/observações, enviar
+        ...(bobinaData.observacoes ? { notes: bobinaData.observacoes } : {}),
         created_at: new Date().toISOString()
       }])
       .select('*')
@@ -279,10 +326,25 @@ export const updateBobina = async (
     // Preparar dados para atualização
     const updateData: any = {}
     
-    if (updates.peso_atual !== undefined) updateData.peso_atual = updates.peso_atual
-    if (updates.status !== undefined) updateData.status = updates.status
-    if (updates.observacoes !== undefined) updateData.observacoes = updates.observacoes
-    if (updates.data_entrada !== undefined) updateData.data_entrada = updates.data_entrada
+    if (updates.peso_atual !== undefined) updateData.weight = updates.peso_atual
+    const normalizeStatusForDb = (status?: string): 'estoque' | 'em_maquina' | 'sobra' | 'acabou' => {
+      switch (status) {
+        case 'em_maquina':
+        case 'estoque':
+        case 'sobra':
+        case 'acabou':
+          return status as 'estoque' | 'em_maquina' | 'sobra' | 'acabou'
+        case 'em-maquina':
+          return 'em_maquina'
+        default:
+          return 'estoque'
+      }
+    }
+
+    const normalizedStatus = normalizeStatusForDb(updates.status)
+    if (updates.status !== undefined) updateData.status = normalizedStatus
+    if (updates.data_entrada !== undefined) updateData.received_date = updates.data_entrada
+    if (normalizedStatus === 'em_maquina') updateData.installation_date = new Date().toISOString().split('T')[0]
     
     const { data, error } = await supabase!
       .from('rolls')

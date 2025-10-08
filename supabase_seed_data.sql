@@ -173,17 +173,7 @@ WHERE active = true
 GROUP BY category_code, category_name
 ORDER BY category_code;
 
--- View: Status das máquinas
-CREATE VIEW machines_status AS
-SELECT 
-  m.machine_number,
-  m.name,
-  m.status,
-  m.is_special,
-  r.roll_code as current_roll,
-  COUNT(oi.id) as pending_orders
-FROM machines m
-LEFT JOIN rolls r ON m.id = r.machine_id AND r.status = 'em_maquina'
-LEFT JOIN order_items oi ON m.id = oi.machine_id AND oi.status = 'pendente'
-GROUP BY m.id, m.machine_number, m.name, m.status, m.is_special, r.roll_code
-ORDER BY m.machine_number;
+-- Substituída por TABELA 'machines_status' no supabase_schema.sql
+-- Para popular dados iniciais, insira registros após criar as máquinas:
+-- INSERT INTO machines_status (machine_id, progress_percentage, efficiency_current, observations, started_at)
+-- VALUES ('<uuid-da-maquina-1>', 0, 0, 'Inicial', NOW());

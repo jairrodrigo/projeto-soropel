@@ -180,7 +180,7 @@ class MachineConfigurationService {
     try {
       console.log(`Carregando configuração da máquina ${machineId}...`)
 
-      // Buscar dados da máquina pelo machine_number (não pelo UUID)
+      // Buscar dados da máquina pelo ID
       const { data: machine, error: machineError } = await supabase
         .from('machines')
         .select(`
@@ -188,9 +188,9 @@ class MachineConfigurationService {
           machine_number,
           name,
           status,
-          current_product
+          updated_at
         `)
-        .eq('machine_number', parseInt(machineId))
+        .eq('id', parseInt(machineId))
         .single()
 
       if (machineError) {
@@ -213,10 +213,17 @@ class MachineConfigurationService {
         console.log('Bobina atual não encontrada ou múltiplas para máquina:', machineId)
       }
 
-      // Buscar produto atual se houver
+      // Produto atual: agora armazenado em machines_status
       let currentProduct = null
-      // Sistema atual não usa tabela de produtos separada
-      // Retorna null para compatibilidade
+      try {
+        const { data: statusRow } = await supabase
+          .from('machines_status')
+          .select('current_product')
+          .eq('machine_id', machine.id)
+          .single()
+        // Mantemos como null para compatibilidade de UI (não usado diretamente aqui)
+        currentProduct = statusRow?.current_product || null
+      } catch (_) {}
 
       // Buscar pedidos atribuídos à máquina de forma simplificada
       const assignedOrders: OrderForMachine[] = []
@@ -313,11 +320,11 @@ class MachineConfigurationService {
     try {
       console.log(`Atualizando produto da máquina ${machineId}...`)
 
-      // Buscar UUID da máquina pelo machine_number
+      // Buscar máquina pelo ID
       const { data: machineData, error: findError } = await supabase
         .from('machines')
         .select('id')
-        .eq('machine_number', parseInt(machineId))
+        .eq('id', parseInt(machineId))
         .single()
 
       if (findError || !machineData) {
@@ -335,17 +342,18 @@ class MachineConfigurationService {
         throw new Error(`Produto não encontrado: ${productError.message}`)
       }
 
-      // Atualizar máquina com novo produto
-      const { error: updateError } = await supabase
-        .from('machines')
-        .update({
+      // Atualizar/Upsert em machines_status com o produto atual
+      const now = new Date().toISOString()
+      const { error: upsertError } = await supabase
+        .from('machines_status')
+        .upsert({
+          machine_id: machineData.id,
           current_product: product.name,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', machineData.id)
+          updated_at: now
+        }, { onConflict: 'machine_id' })
 
-      if (updateError) {
-        throw new Error(`Erro ao atualizar máquina: ${updateError.message}`)
+      if (upsertError) {
+        throw new Error(`Erro ao atualizar status da máquina: ${upsertError.message}`)
       }
 
       // Atualizar order_items selecionados
@@ -407,11 +415,11 @@ class MachineConfigurationService {
     try {
       console.log(`Atualizando status da máquina ${machineId} para ${status}...`)
 
-      // Buscar UUID da máquina pelo machine_number
+      // Buscar máquina pelo ID
       const { data: machineData, error: findError } = await supabase
         .from('machines')
         .select('id')
-        .eq('machine_number', parseInt(machineId))
+        .eq('id', parseInt(machineId))
         .single()
 
       if (findError || !machineData) {

@@ -53,36 +53,29 @@ export const notifyMachineAssignment = async (
       throw new Error(`Erro ao atualizar bobina: ${bobinaError.message}`)
     }
 
-    // 3. Atualizar máquina com a bobina atual
-    const { error: machineUpdateError } = await supabase
-      .from('machines')
-      .update({
-        current_bobina_id: bobinaData.id,
-        // Remover current_product pois não existe no schema
-      // current_product: bobinaData.produto || null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', machine.id)
-
-    if (machineUpdateError) {
-      throw new Error(`Erro ao atualizar máquina: ${machineUpdateError.message}`)
-    }
+    // 3. Não atualizar a máquina diretamente: coluna current_bobina_id não existe no schema.
+    //    O vínculo da bobina com a máquina fica registrado em rolls.machine_id e status 'em_maquina'.
 
     // 4. Registrar atividade
-    await supabase
-      .from('activities')
-      .insert({
-        type: 'changed',
-        title: `Máquina ${machineNumber} - Nova Bobina`,
-        description: `Bobina ${bobinaData.codigo} atribuída à máquina`,
-        machine_id: machine.id,
-        bobina_id: bobinaData.id,
-        user_name: 'Sistema Nova Bobina',
-        metadata: {
-          bobina_codigo: bobinaData.codigo,
-          produto: bobinaData.produto
-        }
-      })
+    // 4. Registrar atividade (se a tabela existir). Não falhar caso não exista.
+    try {
+      await supabase
+        .from('activities')
+        .insert({
+          type: 'changed',
+          title: `Máquina ${machineNumber} - Nova Bobina`,
+          description: `Bobina ${bobinaData.codigo} atribuída à máquina`,
+          machine_id: machine.id,
+          bobina_id: bobinaData.id,
+          user_name: 'Sistema Nova Bobina',
+          metadata: {
+            bobina_codigo: bobinaData.codigo,
+            produto: bobinaData.produto
+          }
+        })
+    } catch (logError) {
+      console.warn('ℹ️ Log de atividade não registrado (tabela ausente ou restrição). Prosseguindo...')
+    }
 
     console.log(`✅ Máquina ${machineNumber} notificada com sucesso`)
     return true
@@ -116,20 +109,7 @@ export const notifyMachineRemoval = async (
       return true // Bobina já não está em máquina
     }
 
-    // 2. Remover bobina da máquina
-    const { error: machineError } = await supabase
-      .from('machines')
-      .update({
-        current_bobina_id: null,
-        // Remover current_product pois não existe no schema
-      // current_product: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', bobina.machine_id)
-
-    if (machineError) {
-      throw new Error(`Erro ao atualizar máquina: ${machineError.message}`)
-    }
+    // 2. Não atualizar a máquina diretamente: coluna current_bobina_id não existe.
 
     // 3. Atualizar bobina
     const { error: updateError } = await supabase
@@ -148,20 +128,24 @@ export const notifyMachineRemoval = async (
     // 4. Registrar atividade
     const machineNumber = bobina.machines?.machine_number
     if (machineNumber) {
-      await supabase
-        .from('activities')
-        .insert({
-          type: 'changed',
-          title: `Máquina ${machineNumber} - Bobina Removida`,
-          description: `Bobina ${bobina.roll_code} removida da máquina`,
-          machine_id: bobina.machine_id,
-          bobina_id: bobinaId,
-          user_name: 'Sistema Nova Bobina',
-          metadata: {
-            bobina_codigo: bobina.roll_code,
-            acao: 'remocao'
-          }
-        })
+      try {
+        await supabase
+          .from('activities')
+          .insert({
+            type: 'changed',
+            title: `Máquina ${machineNumber} - Bobina Removida`,
+            description: `Bobina ${bobina.roll_code} removida da máquina`,
+            machine_id: bobina.machine_id,
+            bobina_id: bobinaId,
+            user_name: 'Sistema Nova Bobina',
+            metadata: {
+              bobina_codigo: bobina.roll_code,
+              acao: 'remocao'
+            }
+          })
+      } catch (logError) {
+        console.warn('ℹ️ Log de atividade não registrado (tabela ausente ou restrição). Prosseguindo...')
+      }
     }
 
     console.log(`✅ Bobina removida da máquina com sucesso`)
